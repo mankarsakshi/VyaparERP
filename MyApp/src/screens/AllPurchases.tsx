@@ -18,6 +18,8 @@ type Props = {
 };
 
 type PurchaseItem = {
+  rate: number | undefined;
+  qty: number | undefined;
   id?: number;
   product_id?: number;
   product_name?: string;
@@ -33,6 +35,11 @@ type PurchaseItem = {
 };
 
 type Purchase = {
+  gst: any;
+  tax_rate: any;
+  rate: number | undefined;
+  product_hsn_code: any;
+  product_unit: any;
   id?: number;
   purchase_id?: number;
   user_id?: number;
@@ -293,11 +300,11 @@ const AllPurchasesScreen = ({navigation, route}: Props) => {
       itemsList = [
         {
           product_name: data.product_name || data.product,
-          product_sku: data.product_sku,
+          product_sku: data.products,
           product_unit: data.product_unit,
           product_hsn_code: data.product_hsn_code,
           quantity: data.quantity || data.qty || 1,
-          purchase_price: data.purchase_price || data.rate || 0,
+          purchase_price: data.purchase_id || data.rate || 0,
           tax_rate: data.tax_rate || data.gst || 0,
           tax_amount: data.tax_amount || 0,
           total_amount: data.total_amount || 0,

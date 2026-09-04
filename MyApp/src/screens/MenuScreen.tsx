@@ -678,9 +678,9 @@ const MENU_MODULES = [
     title: 'Customers',
     description: 'Customer directory & balance ledgers',
     subfields: [
-      {title: 'All Customers', target: 'Customers'},
-      {title: 'Customer Ledger', target: 'CustomerLedger'},
-      {title: 'Customer Details', target: 'CustomerDetails'},
+      {title: 'All Customers', target: 'CustomerMaster'},
+      {title: 'Customer Ledger', target: 'CustomerMaster'},
+      {title: 'Customer Details', target: 'CustomerMaster'},
     ],
   },
 
@@ -863,11 +863,13 @@ const MenuScreen = ({navigation, route}: Props) => {
               <TouchableOpacity
                 style={styles.moduleCardHeader}
                 activeOpacity={0.7}
-                onPress={() =>
-                  hasSubfields
-                    ? toggleModule(module.id)
-                    : null
-                }>
+                onPress={() => {
+                  if (module.id === 'customers') {
+                    openPage('CustomerMaster');
+                  } else if (hasSubfields) {
+                    toggleModule(module.id);
+                  }
+                }}>
 
                 <ModuleIcon type={module.type} />
 

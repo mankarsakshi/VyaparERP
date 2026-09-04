@@ -441,7 +441,9 @@ exports.updatePurchaseOrder = async (req, res) => {
             success: true,
             message: 'Purchase order updated successfully',
             data: {
+                id: Number(targetPoId),
                 purchase_order_id: Number(targetPoId),
+                poid: Number(targetPoId),
                 old_status: result.oldStatus,
                 new_status: result.newStatus,
                 purchase_created: !!result.purchaseId,

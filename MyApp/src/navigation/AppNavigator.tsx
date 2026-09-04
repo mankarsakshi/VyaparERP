@@ -39,7 +39,7 @@ import UnitBrandMasterScreen from '../screens/UnitBrandMasterScreen';
 import UnitMasterScreen from '../screens/UnitMasterScreen';
 
 // Customer & Supplier
-//import CustomerMasterScreen from '../screens/CustomerMasterScreen';
+import CustomerMasterScreen from '../screens/CustomerMasterScreen';
 import SupplierMasterScreen from '../screens/SupplierMasterScreen';
 
 // Purchase
@@ -232,21 +232,56 @@ const AppNavigator = () => {
         />
 
         {/* ===================================== */}
-        {/* CUSTOMER */}
+        {/* CUSTOMER & SUPPLIER */}
         {/* ===================================== */}
 
-        {/* <Stack.Screen
+        <Stack.Screen
           name="CustomerMaster"
+          component={CustomerMasterScreen}
+        />
+        <Stack.Screen
+          name="Customers"
+          component={CustomerMasterScreen}
+        />
+        <Stack.Screen
+          name="Customer"
+          component={CustomerMasterScreen}
+        />
+        <Stack.Screen
+          name="AllCustomers"
+          component={CustomerMasterScreen}
+        />
+        <Stack.Screen
+          name="CustomerDetails"
+          component={CustomerMasterScreen}
+        />
+        <Stack.Screen
+          name="CustomerLedger"
           component={CustomerMasterScreen}
         />
 
         <Stack.Screen
           name="SupplierMaster"
           component={SupplierMasterScreen}
-        /> */}
-
-<Stack.Screen
-          name="SupplierMaster"
+        />
+        <Stack.Screen
+          name="Suppliers"
+          component={SupplierMasterScreen}
+        />
+        <Stack.Screen
+          name="Supplier"
+          component={SupplierMasterScreen}
+        />
+        <Stack.Screen
+          name="AllSuppliers"
+          component={SupplierMasterScreen}
+        />
+        <Stack.Screen
+          name="SupplierDetails"
+          component={SupplierMasterScreen}
+        />
+        <Stack.Screen
+          name="SupplierLedger"
           component={SupplierMasterScreen}
         /> 
         {/* ===================================== */}

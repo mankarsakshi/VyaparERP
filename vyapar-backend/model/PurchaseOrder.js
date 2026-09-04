@@ -270,11 +270,15 @@ exports.getPurchaseOrders = async (connection, userId) => {
     for (const row of rows) {
         if (!purchaseOrdersMap[row.poid]) {
             purchaseOrdersMap[row.poid] = {
+                id: row.poid,
+                purchase_order_id: row.poid,
                 poid: row.poid,
                 user_id: row.user_id,
                 supplier_id: row.supplier_id,
                 supplier_name: row.supplier_name,
                 purchase_order_no: row.purchase_order_no,
+                po_number: row.purchase_order_no,
+                po_no: row.purchase_order_no,
                 po_date: row.po_date,
                 subtotal: row.subtotal,
                 discount: row.discount,
@@ -293,16 +297,23 @@ exports.getPurchaseOrders = async (connection, userId) => {
 
         if (row.item_id) {
             purchaseOrdersMap[row.poid].items.push({
+                id: row.item_id,
                 item_id: row.item_id,
                 purchase_order_id: row.purchase_order_id,
                 product_id: row.product_id,
                 product_name: row.product_name,
+                product: row.product_name,
                 quantity: row.quantity,
                 purchase_price: row.purchase_price,
+                rate: row.purchase_price,
                 item_discount: row.item_discount,
+                discount: row.item_discount,
                 item_tax_rate: row.item_tax_rate,
+                tax_rate: row.item_tax_rate,
                 item_tax_amount: row.item_tax_amount,
+                tax_amount: row.item_tax_amount,
                 item_total_amount: row.item_total_amount,
+                total_amount: row.item_total_amount,
                 received_quantity: row.received_quantity,
                 item_created_date: row.item_created_date
             });
@@ -364,11 +375,15 @@ exports.getPurchaseOrderById = async (connection, purchaseOrderId, userId) => {
     }
 
     const purchaseOrder = {
+        id: rows[0].poid,
+        purchase_order_id: rows[0].poid,
         poid: rows[0].poid,
         user_id: rows[0].user_id,
         supplier_id: rows[0].supplier_id,
         supplier_name: rows[0].supplier_name,
         purchase_order_no: rows[0].purchase_order_no,
+        po_number: rows[0].purchase_order_no,
+        po_no: rows[0].purchase_order_no,
         po_date: rows[0].po_date,
         subtotal: rows[0].subtotal,
         discount: rows[0].discount,
@@ -387,16 +402,23 @@ exports.getPurchaseOrderById = async (connection, purchaseOrderId, userId) => {
     for (const row of rows) {
         if (row.item_id) {
             purchaseOrder.items.push({
+                id: row.item_id,
                 item_id: row.item_id,
                 purchase_order_id: row.purchase_order_id,
                 product_id: row.product_id,
                 product_name: row.product_name,
+                product: row.product_name,
                 quantity: row.quantity,
                 purchase_price: row.purchase_price,
+                rate: row.purchase_price,
                 item_discount: row.item_discount,
+                discount: row.item_discount,
                 item_tax_rate: row.item_tax_rate,
+                tax_rate: row.item_tax_rate,
                 item_tax_amount: row.item_tax_amount,
+                tax_amount: row.item_tax_amount,
                 item_total_amount: row.item_total_amount,
+                total_amount: row.item_total_amount,
                 received_quantity: row.received_quantity,
                 item_created_date: row.item_created_date
             });
