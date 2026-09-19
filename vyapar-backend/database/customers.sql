@@ -1,1 +1,17 @@
-
+﻿CREATE TABLE IF NOT EXISTS customers (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    customer_name VARCHAR(150) NOT NULL,
+    phone VARCHAR(20) NULL,
+    email VARCHAR(150) NULL,
+    gstin VARCHAR(20) NULL,
+    address TEXT NULL,
+    city VARCHAR(100) NULL,
+    state VARCHAR(100) DEFAULT 'Maharashtra',
+    pincode VARCHAR(20) NULL,
+    opening_balance DECIMAL(12,2) DEFAULT 0.00,
+    status ENUM('active', 'inactive') DEFAULT 'active',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
