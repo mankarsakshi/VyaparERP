@@ -1,4 +1,4 @@
-const { getDB } = require('../database/db');
+﻿const { getDB } = require('../database/db');
 
 const Supplier = {
     // Create new supplier
@@ -90,9 +90,7 @@ const Supplier = {
                 id,
                 user_id,
                 supplier_name,
-                supplier_name AS name,
                 phone,
-                phone AS mobile,
                 email,
                 gstin,
                 address,
@@ -100,9 +98,6 @@ const Supplier = {
                 state,
                 pincode,
                 opening_balance,
-                opening_balance AS openingBalance,
-                0.00 AS current_payable,
-                0.00 AS currentPayable,
                 status,
                 created_at,
                 updated_at
@@ -123,9 +118,7 @@ const Supplier = {
                 id,
                 user_id,
                 supplier_name,
-                supplier_name AS name,
                 phone,
-                phone AS mobile,
                 email,
                 gstin,
                 address,
@@ -133,9 +126,6 @@ const Supplier = {
                 state,
                 pincode,
                 opening_balance,
-                opening_balance AS openingBalance,
-                0.00 AS current_payable,
-                0.00 AS currentPayable,
                 status,
                 created_at,
                 updated_at
@@ -155,9 +145,7 @@ const Supplier = {
                 id,
                 user_id,
                 supplier_name,
-                supplier_name AS name,
                 phone,
-                phone AS mobile,
                 email,
                 gstin,
                 address,
@@ -165,9 +153,6 @@ const Supplier = {
                 state,
                 pincode,
                 opening_balance,
-                opening_balance AS openingBalance,
-                0.00 AS current_payable,
-                0.00 AS currentPayable,
                 status,
                 created_at,
                 updated_at
