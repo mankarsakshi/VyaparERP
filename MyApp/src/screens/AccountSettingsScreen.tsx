@@ -165,8 +165,8 @@ const AccountSettingsScreen = ({navigation, route}: Props) => {
         {
           text: 'Logout',
           style: 'destructive',
-          onPress: () => {
-            setAuthToken(null);
+          onPress: async () => {
+              await setAuthToken(null);
             // Reset navigation back to Login screen
             navigation.reset({
               index: 0,

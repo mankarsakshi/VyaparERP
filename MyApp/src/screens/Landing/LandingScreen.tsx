@@ -1,17 +1,44 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
   TouchableOpacity,
   StyleSheet,
+  ActivityIndicator
 } from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
+import { loadToken } from '../../api/tokenManager';
 
 type Props = {
   navigation: any;
 };
 
 const LandingScreen = ({navigation}: Props) => {
+  const [checking, setChecking] = useState(true);
+
+  useEffect(() => {
+    const init = async () => {
+      const token = await loadToken();
+      if (token) {
+        navigation.reset({
+          index: 0,
+          routes: [{name: 'Home'}],
+        });
+      } else {
+        setChecking(false);
+      }
+    };
+    init();
+  }, [navigation]);
+
+  if (checking) {
+    return (
+      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+        <ActivityIndicator size="large" color="#ea7e30" />
+      </View>
+    );
+  }
+
   return (
     <SafeAreaView style={styles.container}>
 

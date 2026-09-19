@@ -9,6 +9,7 @@ import {
   SafeAreaView,
   Alert,
   Modal,
+  Platform,
 } from 'react-native';
 import {downloadSuppliers} from '../utils/exportHelper';
 
@@ -30,6 +31,25 @@ export interface Supplier {
   gstin: string;
   openingBalance: number;
 }
+
+const BackArrowIcon = () => (
+  <View style={{width: 24, height: 24, justifyContent: 'center', alignItems: 'center'}}>
+    <View style={{position: 'absolute', width: 14, height: 2.6, backgroundColor: '#1e293b', borderRadius: 1.3}} />
+    <View
+      style={{
+        position: 'absolute',
+        left: 4,
+        width: 9,
+        height: 9,
+        borderLeftWidth: 2.6,
+        borderTopWidth: 2.6,
+        borderColor: '#1e293b',
+        borderRadius: 1.2,
+        transform: [{rotate: '-45deg'}],
+      }}
+    />
+  </View>
+);
 
 const PencilIcon = ({size = 14, color = '#ea7e30'}: {size?: number; color?: string}) => (
   <View style={{width: size, height: size, alignItems: 'center', justifyContent: 'center'}}>
@@ -210,97 +230,97 @@ const DEFAULT_SUPPLIERS: Supplier[] = [
     gstin: '08AAACG4321K1Z3',
     openingBalance: 34000,
   },
-  {
-    id: '8',
-    name: 'Apex Chemical Industries',
-    phone: '9879012345',
-    email: 'orders@apexchemicals.co.in',
-    address: 'Phase 4, GIDC Vatva',
-    city: 'Ahmedabad',
-    state: 'Gujarat',
-    pincode: '382445',
-    hasGstin: true,
-    gstin: '24AAACA9876D1Z7',
-    openingBalance: 76000,
-  },
-  {
-    id: '9',
-    name: 'Royal Steel Corporation',
-    phone: '9831098765',
-    email: 'royalsteelkol@gmail.com',
-    address: '22 Brabourne Road, 3rd Floor',
-    city: 'Kolkata',
-    state: 'West Bengal',
-    pincode: '700001',
-    hasGstin: true,
-    gstin: '19AAACR1234M1Z4',
-    openingBalance: 145000,
-  },
-  {
-    id: '10',
-    name: 'Lakshmi Silk Mills',
-    phone: '9415012345',
-    email: 'lakshmisilk@yahoo.co.in',
-    address: 'Chowk, Near Vishwanath Gali',
-    city: 'Varanasi',
-    state: 'Uttar Pradesh',
-    pincode: '221001',
-    hasGstin: false,
-    gstin: '',
-    openingBalance: 18000,
-  },
-  {
-    id: '11',
-    name: 'Sunrise Auto Parts',
-    phone: '9815012345',
-    email: 'sunriseauto.ldh@gmail.com',
-    address: 'Focal Point, Phase 5',
-    city: 'Ludhiana',
-    state: 'Punjab',
-    pincode: '141010',
-    hasGstin: true,
-    gstin: '03AAACS5678J1Z1',
-    openingBalance: 53000,
-  },
-  {
-    id: '12',
-    name: 'Deccan Plastics Ltd',
-    phone: '9848012345',
-    email: 'info@deccanplastics.in',
-    address: 'Cherlapally IDA, Phase II',
-    city: 'Hyderabad',
-    state: 'Telangana',
-    pincode: '500051',
-    hasGstin: true,
-    gstin: '36AAACD1234N1Z8',
-    openingBalance: 61000,
-  },
-  {
-    id: '13',
-    name: 'Premier Timber Mart',
-    phone: '9840012345',
-    email: 'premiertimber@gmail.com',
-    address: 'Sydenhams Road, Periamet',
-    city: 'Chennai',
-    state: 'Tamil Nadu',
-    pincode: '600003',
-    hasGstin: false,
-    gstin: '',
-    openingBalance: 22000,
-  },
-  {
-    id: '14',
-    name: 'Malabar Spices Wholesale',
-    phone: '9446012345',
-    email: 'malabarspices@gmail.com',
-    address: 'Jew Town, Mattancherry',
-    city: 'Kochi',
-    state: 'Kerala',
-    pincode: '682002',
-    hasGstin: true,
-    gstin: '32AAACM4321E1Z6',
-    openingBalance: 39000,
-  },
+  // {
+  //   id: '8',
+  //   name: 'Apex Chemical Industries',
+  //   phone: '9879012345',
+  //   email: 'orders@apexchemicals.co.in',
+  //   address: 'Phase 4, GIDC Vatva',
+  //   city: 'Ahmedabad',
+  //   state: 'Gujarat',
+  //   pincode: '382445',
+  //   hasGstin: true,
+  //   gstin: '24AAACA9876D1Z7',
+  //   openingBalance: 76000,
+  // },
+  // {
+  //   id: '9',
+  //   name: 'Royal Steel Corporation',
+  //   phone: '9831098765',
+  //   email: 'royalsteelkol@gmail.com',
+  //   address: '22 Brabourne Road, 3rd Floor',
+  //   city: 'Kolkata',
+  //   state: 'West Bengal',
+  //   pincode: '700001',
+  //   hasGstin: true,
+  //   gstin: '19AAACR1234M1Z4',
+  //   openingBalance: 145000,
+  // },
+  // {
+  //   id: '10',
+  //   name: 'Lakshmi Silk Mills',
+  //   phone: '9415012345',
+  //   email: 'lakshmisilk@yahoo.co.in',
+  //   address: 'Chowk, Near Vishwanath Gali',
+  //   city: 'Varanasi',
+  //   state: 'Uttar Pradesh',
+  //   pincode: '221001',
+  //   hasGstin: false,
+  //   gstin: '',
+  //   openingBalance: 18000,
+  // },
+  // {
+  //   id: '11',
+  //   name: 'Sunrise Auto Parts',
+  //   phone: '9815012345',
+  //   email: 'sunriseauto.ldh@gmail.com',
+  //   address: 'Focal Point, Phase 5',
+  //   city: 'Ludhiana',
+  //   state: 'Punjab',
+  //   pincode: '141010',
+  //   hasGstin: true,
+  //   gstin: '03AAACS5678J1Z1',
+  //   openingBalance: 53000,
+  // },
+  // {
+  //   id: '12',
+  //   name: 'Deccan Plastics Ltd',
+  //   phone: '9848012345',
+  //   email: 'info@deccanplastics.in',
+  //   address: 'Cherlapally IDA, Phase II',
+  //   city: 'Hyderabad',
+  //   state: 'Telangana',
+  //   pincode: '500051',
+  //   hasGstin: true,
+  //   gstin: '36AAACD1234N1Z8',
+  //   openingBalance: 61000,
+  // },
+  // {
+  //   id: '13',
+  //   name: 'Premier Timber Mart',
+  //   phone: '9840012345',
+  //   email: 'premiertimber@gmail.com',
+  //   address: 'Sydenhams Road, Periamet',
+  //   city: 'Chennai',
+  //   state: 'Tamil Nadu',
+  //   pincode: '600003',
+  //   hasGstin: false,
+  //   gstin: '',
+  //   openingBalance: 22000,
+  // },
+  // {
+  //   id: '14',
+  //   name: 'Malabar Spices Wholesale',
+  //   phone: '9446012345',
+  //   email: 'malabarspices@gmail.com',
+  //   address: 'Jew Town, Mattancherry',
+  //   city: 'Kochi',
+  //   state: 'Kerala',
+  //   pincode: '682002',
+  //   hasGstin: true,
+  //   gstin: '32AAACM4321E1Z6',
+  //   openingBalance: 39000,
+  // },
 ];
 
 const SupplierMasterScreen = ({navigation, route}: Props) => {
@@ -536,64 +556,60 @@ const SupplierMasterScreen = ({navigation, route}: Props) => {
       {/* HEADER */}
       <View style={styles.header}>
         <TouchableOpacity
-            style={styles.backBtn}
-            onPress={() => navigation.goBack()}
-            activeOpacity={0.7}
-            hitSlop={{top: 10, bottom: 10, left: 10, right: 10}}>
-          <Text style={styles.backText}>←</Text>
+          style={styles.backButton}
+          onPress={() => navigation.goBack()}
+          activeOpacity={0.7}
+          hitSlop={{top: 12, bottom: 12, left: 12, right: 12}}>
+          <BackArrowIcon />
         </TouchableOpacity>
 
-        <View style={styles.headerTitleBox}>
-          <Text style={styles.headerTitle}>
-            Supplier Directory
-          </Text>
-
-          <Text style={styles.headerSubtitle}>
-            Manage all suppliers
-          </Text>
+        <View style={styles.headerTitleArea}>
+          <Text style={styles.headerTitle}>Supplier Directory</Text>
+          <Text style={styles.headerSubtitle}>Manage all suppliers</Text>
         </View>
       </View>
 
       {/* CONTENT */}
       <View style={styles.content}>
-        {/* SEARCH ROW */}
         <View style={styles.searchRow}>
-          <View style={styles.searchBox}>
+          <View style={styles.searchContainer}>
+            <Text style={styles.searchIcon}>🔍</Text>
             <TextInput
               style={styles.searchInput}
-              placeholder="Search supplier name, phone or city"
-              placeholderTextColor="#d1d5db"
+              placeholder="Search supplier name, phone or city..."
+              placeholderTextColor="#94a3b8"
               value={searchQuery}
-              onChangeText={handleSearchChange}
+              onChangeText={t => {
+                setSearchQuery(t);
+                setCurrentPage(1);
+              }}
             />
-
             {searchQuery.length > 0 && (
               <TouchableOpacity
-                style={styles.clearBtn}
-                activeOpacity={0.7}
                 onPress={() => {
                   setSearchQuery('');
                   setCurrentPage(1);
-                }}>
-                <Text style={styles.clearBtnText}>✕</Text>
+                }}
+                style={styles.clearBtn}>
+                <Text style={styles.clearBtnText}>✖</Text>
               </TouchableOpacity>
             )}
           </View>
 
-          {/* FILE BUTTON */}
           <TouchableOpacity
-            style={styles.fileButton}
-            activeOpacity={0.7}
-            onPress={() =>
-              setDownloadMenuVisible(prev => !prev)
-            }>
-            <View style={styles.fileIcon}>
-              <View style={styles.fileIconFold} />
-              <View style={styles.fileIconLine} />
-              <View style={styles.fileIconLine} />
-              <View style={styles.fileIconLineShort} />
-            </View>
+            style={styles.exportButton}
+            activeOpacity={0.8}
+            onPress={() => setDownloadMenuVisible(prev => !prev)}>
+            <Text style={styles.exportIcon}>📄</Text>
           </TouchableOpacity>
+        </View>
+
+        <View style={styles.swipeHintRow}>
+          <Text style={styles.swipeHintArrow}>↔</Text>
+          <Text style={styles.swipeHintText}>
+            Swipe the table to see all columns
+          </Text>
+        </View>
 
           {/* DOWNLOAD MENU */}
           {downloadMenuVisible && (
@@ -627,7 +643,6 @@ const SupplierMasterScreen = ({navigation, route}: Props) => {
               </TouchableOpacity>
             </View>
           )}
-        </View>
 
         {/* TABLE */}
         <View style={styles.tableWrapper}>
@@ -749,17 +764,13 @@ const SupplierMasterScreen = ({navigation, route}: Props) => {
                 ) : (
                   paginatedSuppliers.map(
                     (supplier, index) => (
-                      <TouchableOpacity
+                      <View
                         key={supplier.id}
-                        activeOpacity={0.7}
                         style={[
                           styles.tableRow,
                           index % 2 === 1 &&
                             styles.tableRowAlternate,
-                        ]}
-                        onPress={() =>
-                          openEditSupplierModal(supplier)
-                        }>
+                        ]}>
                         <Text
                           style={[
                             styles.bodyCell,
@@ -873,24 +884,18 @@ const SupplierMasterScreen = ({navigation, route}: Props) => {
                           <TouchableOpacity
                             style={styles.editButton}
                             activeOpacity={0.7}
-                            onPress={event => {
-                              event.stopPropagation();
-                              openEditSupplierModal(supplier);
-                            }}>
+                            onPress={() => openEditSupplierModal(supplier)}>
                             <PencilIcon size={14} color="#ea7e30" />
                           </TouchableOpacity>
 
                           <TouchableOpacity
                             style={styles.deleteButton}
                             activeOpacity={0.7}
-                            onPress={event => {
-                              event.stopPropagation();
-                              handleDeleteSupplier(supplier);
-                            }}>
+                            onPress={() => handleDeleteSupplier(supplier)}>
                             <DustbinIcon size={14} color="#ef4444" />
                           </TouchableOpacity>
                         </View>
-                      </TouchableOpacity>
+                      </View>
                     ),
                   )
                 )}
@@ -1250,54 +1255,44 @@ export default SupplierMasterScreen;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#ffffff',
+    backgroundColor: '#f8f9fb',
   },
 
   
   header: {
-    backgroundColor: '#C86A34',
-    paddingTop: 38,
-    paddingBottom: 16,
-    paddingHorizontal: 16,
     flexDirection: 'row',
     alignItems: 'center',
-    shadowOpacity: 0.05,
-    shadowRadius: 3,
+    paddingHorizontal: 20,
+    paddingTop: Platform.OS === 'android' ? 24 : 16,
+    paddingBottom: 16,
+    backgroundColor: '#ffffff',
+    borderBottomWidth: 1,
+    borderBottomColor: '#f1f5f9',
   },
-
-  
-  backBtn: {
-    paddingRight: 12,
-    paddingVertical: 5,
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#f8fafc',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
   },
-
-  
-  backText: {
-    color: '#ffffff',
-    fontSize: 24,
-    fontWeight: '700',
-    lineHeight: 26,
-  },
-
-  
-  headerTitleBox: {
+  headerTitleArea: {
     flex: 1,
   },
-
-  
   headerTitle: {
-    color: '#ffffff',
-    fontSize: 19,
+    fontSize: 20,
     fontWeight: '700',
+    color: '#0f172a',
+    letterSpacing: 0.2,
   },
-
-  
   headerSubtitle: {
-    color: '#FCE0D0',
-    fontSize: 12,
+    color: '#64748b',
+    fontSize: 13,
+    fontWeight: '500',
     marginTop: 2,
   },
-
   content: {
     flex: 1,
     paddingHorizontal: 14,
@@ -1308,76 +1303,74 @@ const styles = StyleSheet.create({
   searchRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 14,
-    position: 'relative',
-    zIndex: 1000,
+    paddingHorizontal: 16,
+    marginTop: 6,
+    marginBottom: 8,
   },
-
-  searchBox: {
+  searchContainer: {
     flex: 1,
-    height: 42,
-    backgroundColor: '#ffffff',
-    borderWidth: 1,
-    borderColor: '#d1d5db',
-    borderRadius: 8,
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 10,
+    backgroundColor: '#f1f5f9',
+    borderRadius: 14,
+    paddingHorizontal: 12,
+    height: 48,
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
   },
-
+  searchIcon: {
+    fontSize: 15,
+    color: '#94a3b8',
+    marginRight: 8,
+  },
   searchInput: {
     flex: 1,
-    fontSize: 13,
-    color: '#0f172a',
+    fontSize: 14,
+    color: '#1e293b',
     paddingVertical: 0,
   },
-
   clearBtn: {
-    padding: 5,
+    padding: 4,
   },
-
   clearBtnText: {
-    color: '#64748b',
-    fontSize: 14,
+    fontSize: 13,
+    color: '#94a3b8',
     fontWeight: '700',
   },
-
-  fileButton: {
-    width: 42,
-    height: 42,
-    marginLeft: 8,
-    backgroundColor: '#ffffff',
-    borderWidth: 1,
-    borderColor: '#d1d5db',
-    borderRadius: 8,
+  exportButton: {
+    width: 48,
+    height: 48,
+    borderRadius: 14,
+    backgroundColor: '#ea7e30',
     alignItems: 'center',
     justifyContent: 'center',
+    marginLeft: 10,
+    shadowColor: '#ea7e30',
+    shadowOffset: {width: 0, height: 4},
+    shadowOpacity: 0.25,
+    shadowRadius: 6,
+    elevation: 4,
   },
-
-  fileIcon: {
-    width: 17,
-    height: 20,
-    borderWidth: 1.7,
-    borderColor: '#ea6c08',
-    borderRadius: 2,
-    backgroundColor: '#fff7ed',
-    alignItems: 'flex-start',
-    justifyContent: 'flex-end',
-    paddingBottom: 3,
-    paddingLeft: 3,
-    position: 'relative',
+  exportIcon: {
+    color: '#ffffff',
+    fontSize: 20,
   },
-
-  fileIconFold: {
-    position: 'absolute',
-    top: -1.5,
-    right: -1.5,
-    width: 7,
-    height: 7,
-    backgroundColor: '#ffffff',
-    borderLeftWidth: 1.7,
-    borderBottomWidth: 1.7,
-    borderColor: '#ea6c08',
+  swipeHintRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 18,
+    marginBottom: 10,
+  },
+  swipeHintArrow: {
+    fontSize: 13,
+    color: '#94a3b8',
+    marginRight: 6,
+    fontWeight: '700',
+  },
+  swipeHintText: {
+    fontSize: 12,
+    color: '#64748b',
+    fontWeight: '500',
   },
 
   fileIconLine: {
@@ -1445,11 +1438,15 @@ const styles = StyleSheet.create({
   tableWrapper: {
     flex: 1,
     backgroundColor: '#ffffff',
+    borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#d1d5db',
-    borderRadius: 8,
+    borderColor: '#e2e8f0',
     overflow: 'hidden',
-    position: 'relative',
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 4},
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
+    elevation: 3,
   },
 
   tableContainer: {
@@ -1457,20 +1454,18 @@ const styles = StyleSheet.create({
   },
 
   tableHeaderRow: {
-    height: 54,
     flexDirection: 'row',
-    alignItems: 'center',
     backgroundColor: '#fff7ed',
+    paddingVertical: 14,
     borderBottomWidth: 1,
-    borderBottomColor: '#d1d5db',
+    borderBottomColor: '#fed7aa',
   },
 
   headerCell: {
-    fontSize: 11,
-    color: '#334155',
+    fontSize: 12,
     fontWeight: '700',
-    textAlign: 'center',
-    paddingHorizontal: 7,
+    color: '#c2410c',
+    letterSpacing: 0.5,
   },
 
   tableBody: {
@@ -1478,12 +1473,12 @@ const styles = StyleSheet.create({
   },
 
   tableRow: {
-    minHeight: 54,
     flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#ffffff',
+    paddingVertical: 14,
     borderBottomWidth: 1,
-    borderBottomColor: '#e2e8f0',
+    borderBottomColor: '#f1f5f9',
+    backgroundColor: '#ffffff',
+    alignItems: 'center',
   },
 
   tableRowAlternate: {
@@ -1491,10 +1486,9 @@ const styles = StyleSheet.create({
   },
 
   bodyCell: {
-    fontSize: 11,
+    fontSize: 13,
     color: '#475569',
-    textAlign: 'center',
-    paddingHorizontal: 7,
+    fontWeight: '500',
   },
 
   nameCell: {
@@ -1503,8 +1497,8 @@ const styles = StyleSheet.create({
   },
 
   supplierName: {
-    fontSize: 11,
-    fontWeight: '600',
+    fontSize: 14,
+    fontWeight: '700',
     color: '#1e293b',
   },
 
@@ -1648,9 +1642,9 @@ const styles = StyleSheet.create({
   },
 
   emptyText: {
-    fontSize: 13,
-    color: '#64748b',
-    marginBottom: 12,
+    fontSize: 14,
+    color: '#94a3b8',
+    marginBottom: 10,
   },
 
   emptyAddBtn: {
@@ -1801,7 +1795,7 @@ const styles = StyleSheet.create({
 
   
   modalHeader: {
-    backgroundColor: '#C86A34',
+    backgroundColor: '#ea7e30',
     paddingHorizontal: 16,
     paddingVertical: 14,
     flexDirection: 'row',

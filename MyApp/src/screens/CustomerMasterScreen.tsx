@@ -9,6 +9,7 @@ import {
   SafeAreaView,
   Alert,
   Modal,
+  Platform,
 } from 'react-native';
 import {downloadCustomers} from '../utils/exportHelper';
 
@@ -33,6 +34,25 @@ export interface Customer {
   accountNumber: string;
   ifscCode: string;
 }
+
+const BackArrowIcon = () => (
+  <View style={{width: 24, height: 24, justifyContent: 'center', alignItems: 'center'}}>
+    <View style={{position: 'absolute', width: 14, height: 2.6, backgroundColor: '#1e293b', borderRadius: 1.3}} />
+    <View
+      style={{
+        position: 'absolute',
+        left: 4,
+        width: 9,
+        height: 9,
+        borderLeftWidth: 2.6,
+        borderTopWidth: 2.6,
+        borderColor: '#1e293b',
+        borderRadius: 1.2,
+        transform: [{rotate: '-45deg'}],
+      }}
+    />
+  </View>
+);
 
 const PencilIcon = ({size = 14, color = '#ea7e30'}: {size?: number; color?: string}) => (
   <View style={{width: size, height: size, alignItems: 'center', justifyContent: 'center'}}>
@@ -234,118 +254,7 @@ const DEFAULT_CUSTOMERS: Customer[] = [
     accountNumber: '4123000100023456',
     ifscCode: 'PUNB0412300',
   },
-  {
-    id: '8',
-    name: 'Meenakshi Sundaram',
-    phone: '9444012345',
-    email: 'meenakshi.s@gmail.com',
-    address: '22 Anna Salai, T. Nagar',
-    city: 'Chennai',
-    state: 'Tamil Nadu',
-    pincode: '600017',
-    hasGstin: true,
-    gstin: '33AAAAA1234A1Z1',
-    openingBalance: 24000,
-    bankName: 'Indian Overseas Bank',
-    accountNumber: '015802000004561',
-    ifscCode: 'IOBA0000158',
-  },
-  {
-    id: '9',
-    name: 'Kavita Deshmukh',
-    phone: '9823456780',
-    email: 'kavita.d@gmail.com',
-    address: '501 Sapphire Court, Kothrud',
-    city: 'Pune',
-    state: 'Maharashtra',
-    pincode: '411038',
-    hasGstin: false,
-    gstin: '',
-    openingBalance: 9000,
-    bankName: 'Kotak Mahindra Bank',
-    accountNumber: '6811234567',
-    ifscCode: 'KKBK0000681',
-  },
-  {
-    id: '10',
-    name: 'Manoj Tiwari',
-    phone: '9935123456',
-    email: 'manoj.tiwari@yahoo.in',
-    address: 'Shop 7, Hazratganj Market',
-    city: 'Lucknow',
-    state: 'Uttar Pradesh',
-    pincode: '226001',
-    hasGstin: true,
-    gstin: '09AAACA2345C1Z7',
-    openingBalance: 56000,
-    bankName: 'Union Bank of India',
-    accountNumber: '542102010012345',
-    ifscCode: 'UBIN0554219',
-  },
-  {
-    id: '11',
-    name: 'Rajesh Mukherjee',
-    phone: '9830012345',
-    email: 'rajesh.m@gmail.com',
-    address: '14/2 Park Street, 2nd Floor',
-    city: 'Kolkata',
-    state: 'West Bengal',
-    pincode: '700016',
-    hasGstin: true,
-    gstin: '19AAECR1234R1Z0',
-    openingBalance: 18500,
-    bankName: 'UCO Bank',
-    accountNumber: '02340110001234',
-    ifscCode: 'UCBA0000234',
-  },
-  {
-    id: '12',
-    name: 'Sneha Kulkarni',
-    phone: '9860123456',
-    email: 'sneha.k@hotmail.com',
-    address: '23 Samarth Nagar, Cidco',
-    city: 'Nashik',
-    state: 'Maharashtra',
-    pincode: '422005',
-    hasGstin: false,
-    gstin: '',
-    openingBalance: 4200,
-    bankName: 'Bank of Maharashtra',
-    accountNumber: '20014589632',
-    ifscCode: 'MAHB0000123',
-  },
-  {
-    id: '13',
-    name: 'Harpreet Singh',
-    phone: '9814012345',
-    email: 'harpreet.singh@gmail.com',
-    address: 'GT Road, Near Railway Crossing',
-    city: 'Amritsar',
-    state: 'Punjab',
-    pincode: '143001',
-    hasGstin: true,
-    gstin: '03AABCH1234H1Z3',
-    openingBalance: 67000,
-    bankName: 'HDFC Bank',
-    accountNumber: '50100456123789',
-    ifscCode: 'HDFC0000345',
-  },
-  {
-    id: '14',
-    name: 'Geeta Nair',
-    phone: '9447012345',
-    email: 'geeta.nair@gmail.com',
-    address: 'House 34, MG Road',
-    city: 'Kochi',
-    state: 'Kerala',
-    pincode: '682016',
-    hasGstin: false,
-    gstin: '',
-    openingBalance: 11000,
-    bankName: 'Federal Bank',
-    accountNumber: '12340100123456',
-    ifscCode: 'FDRL0001234',
-  },
+
 ];
 
 const CustomerMasterScreen = ({navigation}: Props) => {
@@ -570,80 +479,58 @@ const CustomerMasterScreen = ({navigation}: Props) => {
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity
-            style={styles.backBtn}
-            onPress={() => navigation.goBack()}
-            activeOpacity={0.7}
-            hitSlop={{top: 10, bottom: 10, left: 10, right: 10}}>
-          <Text style={styles.backText}>←</Text>
+          style={styles.backButton}
+          onPress={() => navigation.goBack()}
+          activeOpacity={0.7}
+          hitSlop={{top: 12, bottom: 12, left: 12, right: 12}}>
+          <BackArrowIcon />
         </TouchableOpacity>
 
-        <View style={styles.headerTitleBox}>
+        <View style={styles.headerTitleArea}>
           <Text style={styles.headerTitle}>Customer Directory</Text>
-          <Text style={styles.headerSubtitle}>
-            Manage all customers
-          </Text>
+          <Text style={styles.headerSubtitle}>Manage all customers</Text>
         </View>
       </View>
 
       <View style={styles.content}>
         <View style={styles.searchRow}>
-          <View style={styles.searchBox}>
+          <View style={styles.searchContainer}>
+            <Text style={styles.searchIcon}>🔍</Text>
             <TextInput
               style={styles.searchInput}
-              placeholder="Search customer name, phone or city"
-              placeholderTextColor="#d1d5db"
+              placeholder="Search customer name, phone or city..."
+              placeholderTextColor="#94a3b8"
               value={searchQuery}
-              onChangeText={handleSearchChange}
+              onChangeText={t => {
+                setSearchQuery(t);
+                setCurrentPage(1);
+              }}
             />
-
             {searchQuery.length > 0 && (
               <TouchableOpacity
-                style={styles.clearBtn}
-                activeOpacity={0.7}
                 onPress={() => {
                   setSearchQuery('');
                   setCurrentPage(1);
-                }}>
-                <Text style={styles.clearBtnText}>✕</Text>
+                }}
+                style={styles.clearBtn}>
+                <Text style={styles.clearBtnText}>✖</Text>
               </TouchableOpacity>
             )}
           </View>
 
           <TouchableOpacity
-            style={styles.fileButton}
-            activeOpacity={0.7}
-            onPress={() =>
-              setDownloadMenuVisible(prev => !prev)
-            }>
-            <View style={styles.fileIcon}>
-              <View style={styles.fileIconFold} />
-              <View style={styles.fileIconLine} />
-              <View style={styles.fileIconLine} />
-              <View style={styles.fileIconLineShort} />
-            </View>
+            style={styles.exportButton}
+            activeOpacity={0.8}
+            onPress={() => setDownloadMenuVisible(true)}>
+            <Text style={styles.exportIcon}>📄</Text>
           </TouchableOpacity>
+        </View>
 
-          {downloadMenuVisible && (
-            <View style={styles.downloadMenu}>
-              <TouchableOpacity
-                style={styles.downloadMenuItem}
-                activeOpacity={0.7}
-                onPress={() => handleDownload('pdf')}>
-                <Text style={styles.downloadMenuIcon}>📄</Text>
-                <Text style={styles.downloadMenuText}>PDF</Text>
-              </TouchableOpacity>
-
-              <View style={styles.downloadMenuDivider} />
-
-              <TouchableOpacity
-                style={styles.downloadMenuItem}
-                activeOpacity={0.7}
-                onPress={() => handleDownload('excel')}>
-                <Text style={styles.downloadMenuIcon}>📊</Text>
-                <Text style={styles.downloadMenuText}>Excel</Text>
-              </TouchableOpacity>
-            </View>
-          )}
+        <View style={styles.swipeHintRow}>
+          <Text style={styles.swipeHintArrow}>↔</Text>
+          <Text style={styles.swipeHintText}>
+            Swipe the table to see all columns
+          </Text>
         </View>
 
         <View style={styles.sectionHeader}>
@@ -784,17 +671,13 @@ const CustomerMasterScreen = ({navigation}: Props) => {
                   </View>
                 ) : (
                   paginatedCustomers.map((customer, index) => (
-                    <TouchableOpacity
+                    <View
                       key={customer.id}
-                      activeOpacity={0.7}
                       style={[
                         styles.tableRow,
                         index % 2 === 1 &&
                           styles.tableRowAlternate,
-                      ]}
-                      onPress={() =>
-                        openEditCustomerModal(customer)
-                      }>
+                      ]}>
                       <Text
                         style={[
                           styles.bodyCell,
@@ -933,24 +816,18 @@ const CustomerMasterScreen = ({navigation}: Props) => {
                         <TouchableOpacity
                           style={styles.editButton}
                           activeOpacity={0.7}
-                          onPress={event => {
-                            event.stopPropagation();
-                            openEditCustomerModal(customer);
-                          }}>
+                          onPress={() => openEditCustomerModal(customer)}>
                           <PencilIcon size={14} color="#ea7e30" />
                         </TouchableOpacity>
 
                         <TouchableOpacity
                           style={styles.deleteButton}
                           activeOpacity={0.7}
-                          onPress={event => {
-                            event.stopPropagation();
-                            handleDeleteCustomer(customer);
-                          }}>
+                          onPress={() => handleDeleteCustomer(customer)}>
                           <DustbinIcon size={14} color="#ef4444" />
                         </TouchableOpacity>
                       </View>
-                    </TouchableOpacity>
+                    </View>
                   ))
                 )}
               </ScrollView>
@@ -1324,54 +1201,44 @@ export default CustomerMasterScreen;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#ffffff',
+    backgroundColor: '#f8f9fb',
   },
 
   
   header: {
-    backgroundColor: '#C86A34',
-    paddingTop: 38,
-    paddingBottom: 16,
-    paddingHorizontal: 16,
     flexDirection: 'row',
     alignItems: 'center',
-    shadowOpacity: 0.05,
-    shadowRadius: 3,
+    paddingHorizontal: 20,
+    paddingTop: Platform.OS === 'android' ? 24 : 16,
+    paddingBottom: 16,
+    backgroundColor: '#ffffff',
+    borderBottomWidth: 1,
+    borderBottomColor: '#f1f5f9',
   },
-
-  
-  backBtn: {
-    paddingRight: 12,
-    paddingVertical: 5,
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#f8fafc',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
   },
-
-  
-  backText: {
-    color: '#ffffff',
-    fontSize: 24,
-    fontWeight: '700',
-    lineHeight: 26,
-  },
-
-  
-  headerTitleBox: {
+  headerTitleArea: {
     flex: 1,
   },
-
-  
   headerTitle: {
-    color: '#ffffff',
-    fontSize: 19,
+    fontSize: 20,
     fontWeight: '700',
+    color: '#0f172a',
+    letterSpacing: 0.2,
   },
-
-  
   headerSubtitle: {
-    color: '#FCE0D0',
-    fontSize: 12,
+    color: '#64748b',
+    fontSize: 13,
+    fontWeight: '500',
     marginTop: 2,
   },
-
   content: {
     flex: 1,
     paddingHorizontal: 14,
@@ -1382,76 +1249,74 @@ const styles = StyleSheet.create({
   searchRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 14,
-    position: 'relative',
-    zIndex: 1000,
+    paddingHorizontal: 16,
+    marginTop: 6,
+    marginBottom: 8,
   },
-
-  searchBox: {
+  searchContainer: {
     flex: 1,
-    height: 42,
-    backgroundColor: '#ffffff',
-    borderWidth: 1,
-    borderColor: '#d1d5db',
-    borderRadius: 8,
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 10,
+    backgroundColor: '#f1f5f9',
+    borderRadius: 14,
+    paddingHorizontal: 12,
+    height: 48,
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
   },
-
+  searchIcon: {
+    fontSize: 15,
+    color: '#94a3b8',
+    marginRight: 8,
+  },
   searchInput: {
     flex: 1,
-    fontSize: 13,
-    color: '#0f172a',
+    fontSize: 14,
+    color: '#1e293b',
     paddingVertical: 0,
   },
-
   clearBtn: {
-    padding: 5,
+    padding: 4,
   },
-
   clearBtnText: {
-    color: '#64748b',
-    fontSize: 14,
+    fontSize: 13,
+    color: '#94a3b8',
     fontWeight: '700',
   },
-
-  fileButton: {
-    width: 42,
-    height: 42,
-    marginLeft: 8,
-    backgroundColor: '#ffffff',
-    borderWidth: 1,
-    borderColor: '#d1d5db',
-    borderRadius: 8,
+  exportButton: {
+    width: 48,
+    height: 48,
+    borderRadius: 14,
+    backgroundColor: '#ea7e30',
     alignItems: 'center',
     justifyContent: 'center',
+    marginLeft: 10,
+    shadowColor: '#ea7e30',
+    shadowOffset: {width: 0, height: 4},
+    shadowOpacity: 0.25,
+    shadowRadius: 6,
+    elevation: 4,
   },
-
-  fileIcon: {
-    width: 17,
-    height: 20,
-    borderWidth: 1.7,
-    borderColor: '#ea6c08',
-    borderRadius: 2,
-    backgroundColor: '#fff7ed',
-    alignItems: 'flex-start',
-    justifyContent: 'flex-end',
-    paddingBottom: 3,
-    paddingLeft: 3,
-    position: 'relative',
+  exportIcon: {
+    color: '#ffffff',
+    fontSize: 20,
   },
-
-  fileIconFold: {
-    position: 'absolute',
-    top: -1.5,
-    right: -1.5,
-    width: 7,
-    height: 7,
-    backgroundColor: '#ffffff',
-    borderLeftWidth: 1.7,
-    borderBottomWidth: 1.7,
-    borderColor: '#ea6c08',
+  swipeHintRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 18,
+    marginBottom: 10,
+  },
+  swipeHintArrow: {
+    fontSize: 13,
+    color: '#94a3b8',
+    marginRight: 6,
+    fontWeight: '700',
+  },
+  swipeHintText: {
+    fontSize: 12,
+    color: '#64748b',
+    fontWeight: '500',
   },
 
   fileIconLine: {
@@ -1538,11 +1403,15 @@ const styles = StyleSheet.create({
   tableWrapper: {
     flex: 1,
     backgroundColor: '#ffffff',
+    borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#d1d5db',
-    borderRadius: 8,
+    borderColor: '#e2e8f0',
     overflow: 'hidden',
-    position: 'relative',
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 4},
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
+    elevation: 3,
   },
 
   tableContainer: {
@@ -1550,20 +1419,18 @@ const styles = StyleSheet.create({
   },
 
   tableHeaderRow: {
-    height: 54,
     flexDirection: 'row',
-    alignItems: 'center',
     backgroundColor: '#fff7ed',
+    paddingVertical: 14,
     borderBottomWidth: 1,
-    borderBottomColor: '#d1d5db',
+    borderBottomColor: '#fed7aa',
   },
 
   headerCell: {
-    fontSize: 11,
-    color: '#334155',
+    fontSize: 12,
     fontWeight: '700',
-    textAlign: 'center',
-    paddingHorizontal: 7,
+    color: '#c2410c',
+    letterSpacing: 0.5,
   },
 
   tableBody: {
@@ -1571,12 +1438,12 @@ const styles = StyleSheet.create({
   },
 
   tableRow: {
-    minHeight: 54,
     flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#ffffff',
+    paddingVertical: 14,
     borderBottomWidth: 1,
-    borderBottomColor: '#e2e8f0',
+    borderBottomColor: '#f1f5f9',
+    backgroundColor: '#ffffff',
+    alignItems: 'center',
   },
 
   tableRowAlternate: {
@@ -1584,10 +1451,9 @@ const styles = StyleSheet.create({
   },
 
   bodyCell: {
-    fontSize: 11,
+    fontSize: 13,
     color: '#475569',
-    textAlign: 'center',
-    paddingHorizontal: 7,
+    fontWeight: '500',
   },
 
   nameCell: {
@@ -1596,8 +1462,8 @@ const styles = StyleSheet.create({
   },
 
   customerName: {
-    fontSize: 11,
-    fontWeight: '600',
+    fontSize: 14,
+    fontWeight: '700',
     color: '#1e293b',
   },
 
@@ -1753,9 +1619,9 @@ const styles = StyleSheet.create({
   },
 
   emptyText: {
-    fontSize: 13,
-    color: '#64748b',
-    marginBottom: 12,
+    fontSize: 14,
+    color: '#94a3b8',
+    marginBottom: 10,
   },
 
   emptyAddBtn: {
@@ -1903,7 +1769,7 @@ const styles = StyleSheet.create({
 
   
   modalHeader: {
-    backgroundColor: '#C86A34',
+    backgroundColor: '#ea7e30',
     paddingHorizontal: 16,
     paddingVertical: 14,
     flexDirection: 'row',

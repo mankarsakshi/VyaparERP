@@ -12,6 +12,7 @@ import {
   Platform,
   Switch,
 } from 'react-native';
+import {Picker} from '@react-native-picker/picker';
 
 type Props = {
   navigation: any;
@@ -57,68 +58,47 @@ const AddProductScreen = ({navigation, route}: Props) => {
   // Basic Info States
   const [name, setName] = useState('');
   const [sku, setSku] = useState('');
-  const [hsnCode, setHsnCode] = useState('');
   const [category, setCategory] = useState('Electronics');
-  const [brand, setBrand] = useState('Generic');
   const [unit, setUnit] = useState('Piece');
-  const [description, setDescription] = useState('');
 
   // Pricing & Tax States
   const [purchasePrice, setPurchasePrice] = useState('');
   const [sellingPrice, setSellingPrice] = useState('');
-  const [gstRate, setGstRate] = useState('18%');
-  const [isTaxIncluded, setIsTaxIncluded] = useState(false);
+  const [gstRate, setGstRate] = useState('0%');
+  const [cgst, setCgst] = useState('0');
+  const [sgst, setSgst] = useState('0');
+  const [igst, setIgst] = useState('0');
 
   // Stock States
   const [openingStock, setOpeningStock] = useState('');
-  const [lowStockLevel, setLowStockLevel] = useState('5');
-  const [location, setLocation] = useState('');
 
   // Success State
   const [savedSuccess, setSavedSuccess] = useState(false);
 
-  // Auto-generate SKU Code
-  const handleGenerateSKU = () => {
-    const prefix = name ? name.substring(0, 3).toUpperCase().replace(/[^A-Z]/g, '') || 'PRD' : 'PRD';
-    const randomNum = Math.floor(100 + Math.random() * 900);
-    setSku(`${prefix}${randomNum}`);
-  };
-
-  // Calculate profit margin
   const pPrice = parseFloat(purchasePrice) || 0;
   const sPrice = parseFloat(sellingPrice) || 0;
-  const profit = sPrice - pPrice;
-  const marginPercent = pPrice > 0 ? ((profit / pPrice) * 100).toFixed(1) : '0';
 
   const handleSaveProduct = () => {
     if (!name.trim()) {
       Alert.alert('Required Field', 'Please enter the Product Name.');
       return;
     }
-    if (!sellingPrice.trim()) {
-      Alert.alert('Required Field', 'Please enter the Selling Price.');
-      return;
-    }
 
-    const finalSku = sku.trim() || `PRD${Math.floor(100 + Math.random() * 900)}`;
+    const finalSku = sku.trim();
 
     const newProduct = {
       id: Date.now().toString(),
       name: name.trim(),
       sku: finalSku,
       category,
-      brand,
       unit,
-      hsnCode: hsnCode.trim(),
-      description: description.trim(),
       purchasePrice: pPrice,
       sellingPrice: sPrice,
       gstRate,
-      isTaxIncluded,
+      cgst: parseFloat(cgst) || 0,
+      sgst: parseFloat(sgst) || 0,
+      igst: parseFloat(igst) || 0,
       openingStock: parseInt(openingStock, 10) || 0,
-      currentStock: parseInt(openingStock, 10) || 0,
-      lowStockLevel: parseInt(lowStockLevel, 10) || 5,
-      location: location.trim(),
     };
 
     setSavedSuccess(true);
@@ -150,12 +130,12 @@ const AddProductScreen = ({navigation, route}: Props) => {
           onPress: () => {
             setName('');
             setSku('');
-            setHsnCode('');
-            setDescription('');
             setPurchasePrice('');
             setSellingPrice('');
+            setCgst('0');
+            setSgst('0');
+            setIgst('0');
             setOpeningStock('');
-            setLocation('');
           },
         },
       ],
@@ -202,17 +182,8 @@ const AddProductScreen = ({navigation, route}: Props) => {
             </View>
           )}
 
-          {/* ===================================================== */}
-          {/* SECTION 1: BASIC INFORMATION */}
-          {/* ===================================================== */}
+          {/* FORM FIELDS */}
           <View style={styles.formCard}>
-            <View style={styles.cardHeaderRow}>
-              <View style={styles.sectionNumberBadge}>
-                <Text style={styles.sectionNumberText}>1</Text>
-              </View>
-              <Text style={styles.sectionHeading}>Basic Information</Text>
-            </View>
-
             {/* PRODUCT NAME */}
             <View style={styles.inputGroup}>
               <Text style={styles.label}>
@@ -227,148 +198,70 @@ const AddProductScreen = ({navigation, route}: Props) => {
               />
             </View>
 
-            {/* SKU & GENERATE BUTTON */}
+            {/* PRODUCT CODE */}
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>SKU / Item Code</Text>
-              <View style={styles.inputWithActionRow}>
-                <TextInput
-                  style={[styles.input, {flex: 1, marginRight: 10}]}
-                  placeholder="Enter SKU code"
-                  placeholderTextColor="#d1d5db"
-                  value={sku}
-                  onChangeText={setSku}
-                  autoCapitalize="characters"
-                />
-                <TouchableOpacity
-                  style={styles.generateButton}
-                  onPress={handleGenerateSKU}
-                  activeOpacity={0.7}>
-                  <Text style={styles.generateButtonText}>⚡ Auto</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-
-            {/* HSN CODE */}
-            <View style={styles.inputGroup}>
-              <Text style={styles.label}>HSN / SAC Code</Text>
+              <Text style={styles.label}>Product Code</Text>
               <TextInput
                 style={styles.input}
-                placeholder="Enter HSN/SAC code"
+                placeholder="Enter SKU / product code"
                 placeholderTextColor="#d1d5db"
-                value={hsnCode}
-                onChangeText={setHsnCode}
-                keyboardType="numeric"
-                maxLength={8}
+                value={sku}
+                onChangeText={setSku}
+                autoCapitalize="characters"
               />
             </View>
 
             {/* CATEGORY SELECTOR */}
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>
-                Category <Text style={styles.required}>*</Text>
-              </Text>
-              <View style={styles.pillContainer}>
-                {CATEGORIES.map(cat => (
-                  <TouchableOpacity
-                    key={cat}
-                    style={[
-                      styles.pill,
-                      category === cat && styles.activePill,
-                    ]}
-                    onPress={() => setCategory(cat)}>
-                    <Text
-                      style={[
-                        styles.pillText,
-                        category === cat && styles.activePillText,
-                      ]}>
-                      {cat}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
+              <Text style={styles.label}>Category</Text>
+              <View style={styles.pickerContainer}>
+                <Picker
+                  selectedValue={category}
+                  onValueChange={setCategory}
+                  style={styles.pickerStyle}>
+                  <Picker.Item label="Select or type category" value="" />
+                  {CATEGORIES.map(cat => (
+                    <Picker.Item key={cat} label={cat} value={cat} />
+                  ))}
+                </Picker>
               </View>
             </View>
 
-            {/* BRAND SELECTOR */}
-            <View style={styles.inputGroup}>
-              <Text style={styles.label}>Brand</Text>
-              <View style={styles.pillContainer}>
-                {BRANDS.map(b => (
-                  <TouchableOpacity
-                    key={b}
-                    style={[
-                      styles.pill,
-                      brand === b && styles.activePillSecondary,
-                    ]}
-                    onPress={() => setBrand(b)}>
-                    <Text
-                      style={[
-                        styles.pillText,
-                        brand === b && styles.activePillText,
-                      ]}>
-                      {b}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
+            {/* UNIT & GST RATE ROW */}
+            <View style={styles.rowInputs}>
+              <View style={[styles.inputGroup, {flex: 1, marginRight: 8}]}>
+                <Text style={styles.label}>Unit</Text>
+                <View style={styles.pickerContainer}>
+                  <Picker
+                    selectedValue={unit}
+                    onValueChange={setUnit}
+                    style={styles.pickerStyle}>
+                    {UNITS.map(u => (
+                      <Picker.Item key={u} label={u} value={u} />
+                    ))}
+                  </Picker>
+                </View>
               </View>
-            </View>
 
-            {/* UNIT SELECTOR */}
-            <View style={styles.inputGroup}>
-              <Text style={styles.label}>
-                Unit of Measurement <Text style={styles.required}>*</Text>
-              </Text>
-              <View style={styles.pillContainer}>
-                {UNITS.map(u => (
-                  <TouchableOpacity
-                    key={u}
-                    style={[
-                      styles.pill,
-                      unit === u && styles.activePillTertiary,
-                    ]}
-                    onPress={() => setUnit(u)}>
-                    <Text
-                      style={[
-                        styles.pillText,
-                        unit === u && styles.activePillText,
-                      ]}>
-                      {u}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
+              <View style={[styles.inputGroup, {flex: 1, marginLeft: 8}]}>
+                <Text style={styles.label}>GST Rate</Text>
+                <View style={styles.pickerContainer}>
+                  <Picker
+                    selectedValue={gstRate}
+                    onValueChange={setGstRate}
+                    style={styles.pickerStyle}>
+                    {GST_RATES.map(rate => (
+                      <Picker.Item key={rate} label={rate} value={rate} />
+                    ))}
+                  </Picker>
+                </View>
               </View>
-            </View>
-
-            {/* DESCRIPTION */}
-            <View style={styles.inputGroup}>
-              <Text style={styles.label}>Description</Text>
-              <TextInput
-                style={[styles.input, styles.textArea]}
-                placeholder="Enter product description"
-                placeholderTextColor="#d1d5db"
-                value={description}
-                onChangeText={setDescription}
-                multiline
-                numberOfLines={3}
-                textAlignVertical="top"
-              />
-            </View>
-          </View>
-
-          {/* ===================================================== */}
-          {/* SECTION 2: PRICING & TAXATION */}
-          {/* ===================================================== */}
-          <View style={styles.formCard}>
-            <View style={styles.cardHeaderRow}>
-              <View style={styles.sectionNumberBadge}>
-                <Text style={styles.sectionNumberText}>2</Text>
-              </View>
-              <Text style={styles.sectionHeading}>Pricing & Tax Details</Text>
             </View>
 
             {/* PURCHASE & SELLING PRICE ROW */}
             <View style={styles.rowInputs}>
               <View style={[styles.inputGroup, {flex: 1, marginRight: 8}]}>
-                <Text style={styles.label}>Purchase Price (₹)</Text>
+                <Text style={styles.label}>Purchase Price</Text>
                 <TextInput
                   style={styles.input}
                   placeholder="Enter purchase price"
@@ -380,9 +273,7 @@ const AddProductScreen = ({navigation, route}: Props) => {
               </View>
 
               <View style={[styles.inputGroup, {flex: 1, marginLeft: 8}]}>
-                <Text style={styles.label}>
-                  Selling Price (₹) <Text style={styles.required}>*</Text>
-                </Text>
+                <Text style={styles.label}>Selling Price</Text>
                 <TextInput
                   style={styles.input}
                   placeholder="Enter selling price"
@@ -394,110 +285,53 @@ const AddProductScreen = ({navigation, route}: Props) => {
               </View>
             </View>
 
-            {/* PROFIT MARGIN BADGE */}
-            {pPrice > 0 && sPrice > 0 && (
-              <View style={[
-                styles.marginCard,
-                profit >= 0 ? styles.marginCardPositive : styles.marginCardNegative,
-              ]}>
-                <Text style={styles.marginLabel}>Estimated Profit / Margin:</Text>
-                <Text style={[
-                  styles.marginValue,
-                  profit >= 0 ? styles.marginValuePositive : styles.marginValueNegative,
-                ]}>
-                  {profit >= 0 ? '+' : ''}₹{profit.toLocaleString()} ({marginPercent}%)
-                </Text>
-              </View>
-            )}
-
-            {/* GST RATE SELECTOR */}
-            <View style={styles.inputGroup}>
-              <Text style={styles.label}>GST Tax Rate</Text>
-              <View style={styles.pillContainer}>
-                {GST_RATES.map(rate => (
-                  <TouchableOpacity
-                    key={rate}
-                    style={[
-                      styles.pill,
-                      gstRate === rate && styles.activePill,
-                    ]}
-                    onPress={() => setGstRate(rate)}>
-                    <Text
-                      style={[
-                        styles.pillText,
-                        gstRate === rate && styles.activePillText,
-                      ]}>
-                      {rate}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </View>
-
-            {/* TAX INCLUDED SWITCH */}
-            <View style={styles.switchRow}>
-              <View style={{flex: 1, paddingRight: 10}}>
-                <Text style={styles.switchLabel}>Price Includes Tax</Text>
-                <Text style={styles.switchSubtitle}>
-                  Enable if selling price already includes GST
-                </Text>
-              </View>
-              <Switch
-                value={isTaxIncluded}
-                onValueChange={setIsTaxIncluded}
-                trackColor={{false: '#d1d5db', true: '#d1d5db'}}
-                thumbColor={isTaxIncluded ? '#ea6c08' : '#f9fafb'}
-              />
-            </View>
-          </View>
-
-          {/* ===================================================== */}
-          {/* SECTION 3: INVENTORY & STOCK */}
-          {/* ===================================================== */}
-          <View style={styles.formCard}>
-            <View style={styles.cardHeaderRow}>
-              <View style={styles.sectionNumberBadge}>
-                <Text style={styles.sectionNumberText}>3</Text>
-              </View>
-              <Text style={styles.sectionHeading}>Inventory & Stock</Text>
-            </View>
-
-            {/* OPENING STOCK & LOW STOCK ROW */}
+            {/* CGST, SGST, IGST ROW */}
             <View style={styles.rowInputs}>
-              <View style={[styles.inputGroup, {flex: 1, marginRight: 8}]}>
-                <Text style={styles.label}>Opening Quantity</Text>
+              <View style={[styles.inputGroup, {flex: 1, marginRight: 4}]}>
+                <Text style={styles.label}>CGST</Text>
                 <TextInput
                   style={styles.input}
-                  placeholder="Enter opening stock"
+                  placeholder="0"
                   placeholderTextColor="#d1d5db"
                   keyboardType="numeric"
-                  value={openingStock}
-                  onChangeText={setOpeningStock}
+                  value={cgst}
+                  onChangeText={setCgst}
                 />
               </View>
-
-              <View style={[styles.inputGroup, {flex: 1, marginLeft: 8}]}>
-                <Text style={styles.label}>Low Stock Alert</Text>
+              <View style={[styles.inputGroup, {flex: 1, marginHorizontal: 4}]}>
+                <Text style={styles.label}>SGST</Text>
                 <TextInput
                   style={styles.input}
-                  placeholder="Enter min stock"
+                  placeholder="0"
                   placeholderTextColor="#d1d5db"
                   keyboardType="numeric"
-                  value={lowStockLevel}
-                  onChangeText={setLowStockLevel}
+                  value={sgst}
+                  onChangeText={setSgst}
+                />
+              </View>
+              <View style={[styles.inputGroup, {flex: 1, marginLeft: 4}]}>
+                <Text style={styles.label}>IGST</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="0"
+                  placeholderTextColor="#d1d5db"
+                  keyboardType="numeric"
+                  value={igst}
+                  onChangeText={setIgst}
                 />
               </View>
             </View>
 
-            {/* LOCATION */}
+            {/* OPENING STOCK QUANTITY */}
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>Storage / Rack Location</Text>
+              <Text style={styles.label}>Opening Stock Quantity</Text>
               <TextInput
                 style={styles.input}
-                placeholder="Enter shelf or rack location (e.g. Rack A-1)"
+                placeholder="Enter opening stock"
                 placeholderTextColor="#d1d5db"
-                value={location}
-                onChangeText={setLocation}
+                keyboardType="numeric"
+                value={openingStock}
+                onChangeText={setOpeningStock}
               />
             </View>
           </View>
@@ -706,6 +540,21 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 11,
     fontSize: 14,
+    color: '#0f172a',
+  },
+
+  pickerContainer: {
+    backgroundColor: '#ffffff',
+    borderWidth: 1,
+    borderColor: '#d1d5db',
+    borderRadius: 9,
+    overflow: 'hidden',
+    justifyContent: 'center',
+    height: 44, // roughly matches text input height
+  },
+
+  pickerStyle: {
+    width: '100%',
     color: '#0f172a',
   },
 

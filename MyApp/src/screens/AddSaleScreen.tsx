@@ -16,6 +16,7 @@ import {
 } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import {API_BASE_URL} from '../api/config';
+import {saleAPI} from '../api/saleService';
 
 type Props = {
   navigation: any;
@@ -866,11 +867,11 @@ const AddSaleScreen = ({navigation, route}: Props) => {
 
     try {
       setSaving(true);
-      await new Promise<void>(resolve => {
-        setTimeout(() => {
-          resolve();
-        }, 500);
-      });
+      if (isEditing) {
+        await saleAPI.updateSale(payload);
+      } else {
+        await saleAPI.createSale(payload);
+      }
 
       Alert.alert(
         'Success',

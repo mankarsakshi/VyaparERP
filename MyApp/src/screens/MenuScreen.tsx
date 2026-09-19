@@ -4,6 +4,8 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
+  Pressable,
+
   Image,
   ScrollView,
   SafeAreaView,
@@ -272,10 +274,7 @@ const ModuleAccordionItem = ({
   return (
     <View style={styles.moduleItemWrapper}>
       {/* Module Title Row */}
-      <TouchableOpacity
-        style={styles.moduleRow}
-        activeOpacity={0.7}
-        onPress={onToggle}>
+      <Pressable style={({pressed}) => [styles.moduleRow, pressed && {backgroundColor: '#fff7ed'}]} onPress={onToggle}>
         {/* Module Icon Container */}
         <View style={[styles.moduleIconContainer, {backgroundColor: module.bg}]}>
           <ModuleIcon type={module.type} color={module.color} />
@@ -294,7 +293,7 @@ const ModuleAccordionItem = ({
             ⌄
           </Animated.Text>
         </View>
-      </TouchableOpacity>
+      </Pressable>
 
       {/* Expanded Subfields List */}
       {isExpanded && (
@@ -383,9 +382,8 @@ const MenuScreen = ({navigation, route, onClose}: Props) => {
           {
             text: 'Logout',
             style: 'destructive',
-            onPress: () => {
-              setAuthToken(null);
-              if (onClose) onClose();
+            onPress: async () => {
+              await setAuthToken(null);
               navigation.reset({
                 index: 0,
                 routes: [{name: 'Login'}],
@@ -528,40 +526,31 @@ const MenuScreen = ({navigation, route, onClose}: Props) => {
               </View>
 
               {/* MY PROFILE */}
-              <TouchableOpacity
-                style={styles.accountRow}
-                activeOpacity={0.7}
-                onPress={() => openPage('BusinessProfile')}>
+              <Pressable style={({pressed}) => [styles.accountRow, pressed && {backgroundColor: '#fff7ed'}]} onPress={() => openPage('BusinessProfile')}>
                 <View style={[styles.accountIconBox, {backgroundColor: '#fff7ed'}]}>
                   <Text style={{fontSize: 16, color: '#ea7e30'}}>👤</Text>
                 </View>
                 <Text style={styles.accountLabel}>My Profile</Text>
                 <Text style={styles.accountChevron}>›</Text>
-              </TouchableOpacity>
+              </Pressable>
 
               {/* HELP & SUPPORT */}
-              <TouchableOpacity
-                style={styles.accountRow}
-                activeOpacity={0.7}
-                onPress={() => openPage('AccountSettings')}>
+              <Pressable style={({pressed}) => [styles.accountRow, pressed && {backgroundColor: '#fff7ed'}]} onPress={() => openPage('AccountSettings')}>
                 <View style={[styles.accountIconBox, {backgroundColor: '#f1f5f9'}]}>
                   <Text style={{fontSize: 16, color: '#475569', fontWeight: '800'}}>?</Text>
                 </View>
                 <Text style={styles.accountLabel}>Help & Support</Text>
                 <Text style={styles.accountChevron}>›</Text>
-              </TouchableOpacity>
+              </Pressable>
 
               {/* LOGOUT */}
-              <TouchableOpacity
-                style={styles.accountRow}
-                activeOpacity={0.7}
-                onPress={() => openPage('Logout')}>
+              <Pressable style={({pressed}) => [styles.accountRow, pressed && {backgroundColor: '#fff7ed'}]} onPress={() => openPage('Logout')}>
                 <View style={[styles.accountIconBox, {backgroundColor: '#fef2f2'}]}>
                   <Text style={{fontSize: 16, color: '#ef4444'}}>↪</Text>
                 </View>
                 <Text style={[styles.accountLabel, {color: '#ef4444'}]}>Logout</Text>
                 <Text style={[styles.accountChevron, {color: '#ef4444'}]}>›</Text>
-              </TouchableOpacity>
+              </Pressable>
             </View>
           </ScrollView>
 

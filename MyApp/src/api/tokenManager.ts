@@ -1,9 +1,39 @@
 declare const global: any;
+import RNFS from 'react-native-fs';
 
 let authToken: string | null = null;
+const TOKEN_FILE_PATH = `${RNFS.DocumentDirectoryPath}/auth_token.txt`;
 
-export const setAuthToken = (token: string | null) => {
+export const loadToken = async () => {
+  try {
+    const exists = await RNFS.exists(TOKEN_FILE_PATH);
+    if (exists) {
+      const token = await RNFS.readFile(TOKEN_FILE_PATH, 'utf8');
+      if (token) {
+        authToken = token;
+        return token;
+      }
+    }
+  } catch (err) {
+    console.log('Error reading token', err);
+  }
+  return null;
+};
+
+export const setAuthToken = async (token: string | null) => {
   authToken = token;
+  try {
+    if (token) {
+      await RNFS.writeFile(TOKEN_FILE_PATH, token, 'utf8');
+    } else {
+      const exists = await RNFS.exists(TOKEN_FILE_PATH);
+      if (exists) {
+        await RNFS.unlink(TOKEN_FILE_PATH);
+      }
+    }
+  } catch (err) {
+    console.log('Error saving token', err);
+  }
 };
 
 export const getAuthToken = () => authToken;
@@ -25,4 +55,3 @@ const originalFetch = (globalObj as any).fetch;
 
   return originalFetch(input, init);
 };
-

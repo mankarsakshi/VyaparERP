@@ -710,29 +710,24 @@ const ProductMasterScreen = ({navigation}: Props) => {
             {/* TABLE HEADER */}
             <View style={styles.tableHeaderRow}>
               <Text style={[styles.columnHeader, styles.colIndex]}>#</Text>
-              <Text style={[styles.columnHeader, styles.colName]}>
-                PRODUCT NAME
-              </Text>
+              <Text style={[styles.columnHeader, styles.colName]}>PRODUCT NAME</Text>
               <Text style={[styles.columnHeader, styles.colCode]}>CODE</Text>
-              <Text style={[styles.columnHeader, styles.colPrice]}>
-                PURCHASE
-              </Text>
-              <Text style={[styles.columnHeader, styles.colPrice]}>
-                SELLING
-              </Text>
-              <Text style={[styles.columnHeader, styles.colStock]}>
-                STOCK
-              </Text>
-              <Text style={[styles.columnHeader, styles.colActions]}>
-                ACTIONS
-              </Text>
+              <Text style={[styles.columnHeader, styles.colPrice]}>PURCHASE</Text>
+              <Text style={[styles.columnHeader, styles.colPrice]}>SELLING</Text>
+              <Text style={[styles.columnHeader, styles.colCategory]}>CATEGORY</Text>
+              <Text style={[styles.columnHeader, styles.colUnit]}>UNIT</Text>
+              <Text style={[styles.columnHeader, styles.colGST]}>GST</Text>
+              <Text style={[styles.columnHeader, styles.colGST]}>CGST</Text>
+              <Text style={[styles.columnHeader, styles.colGST]}>SGST</Text>
+              <Text style={[styles.columnHeader, styles.colGST]}>IGST</Text>
+              <Text style={[styles.columnHeader, styles.colStock]}>STOCK</Text>
+              <Text style={[styles.columnHeader, styles.colActions]}>ACTIONS</Text>
             </View>
 
             {/* TABLE BODY ROWS */}
             {currentProducts.map((item, index) => {
               const globalIndex = startIndex + index + 1;
-              const isLowStock =
-                (item.currentStock ?? 0) <= (item.lowStockLevel ?? 5);
+              const isLowStock = (item.currentStock ?? 0) <= (item.lowStockLevel ?? 5);
 
               return (
                 <View
@@ -774,6 +769,48 @@ const ProductMasterScreen = ({navigation}: Props) => {
                   <View style={styles.colPrice}>
                     <Text style={styles.cellSellingText}>
                       ₹{(item.sellingPrice ?? 0).toFixed(1)}
+                    </Text>
+                  </View>
+
+                  {/* Category Column */}
+                  <View style={styles.colCategory}>
+                    <Text style={styles.cellCodeText} numberOfLines={1}>
+                      {item.category || '-'}
+                    </Text>
+                  </View>
+
+                  {/* Unit Column */}
+                  <View style={styles.colUnit}>
+                    <Text style={styles.cellCodeText} numberOfLines={1}>
+                      {item.unit || '-'}
+                    </Text>
+                  </View>
+
+                  {/* GST Column */}
+                  <View style={styles.colGST}>
+                    <Text style={styles.cellCodeText} numberOfLines={1}>
+                      {item.gstRate || '0%'}
+                    </Text>
+                  </View>
+
+                  {/* CGST Column */}
+                  <View style={styles.colGST}>
+                    <Text style={styles.cellCodeText} numberOfLines={1}>
+                      {item.cgst || '0'}
+                    </Text>
+                  </View>
+
+                  {/* SGST Column */}
+                  <View style={styles.colGST}>
+                    <Text style={styles.cellCodeText} numberOfLines={1}>
+                      {item.sgst || '0'}
+                    </Text>
+                  </View>
+
+                  {/* IGST Column */}
+                  <View style={styles.colGST}>
+                    <Text style={styles.cellCodeText} numberOfLines={1}>
+                      {item.igst || '0'}
                     </Text>
                   </View>
 
@@ -949,22 +986,22 @@ const ProductMasterScreen = ({navigation}: Props) => {
               <Text style={styles.inputLabel}>Product Name *</Text>
               <TextInput
                 style={styles.formInput}
-                placeholder="e.g. Amul Taaza Milk 1L"
+                placeholder="Enter product name"
                 value={name}
                 onChangeText={setName}
               />
 
-              <Text style={styles.inputLabel}>Product Code / SKU</Text>
+              <Text style={styles.inputLabel}>Product Code</Text>
               <TextInput
                 style={styles.formInput}
-                placeholder="e.g. DRY-1042"
+                placeholder="Enter product code"
                 value={sku}
                 onChangeText={setSku}
               />
 
               <View style={styles.twoColumnRow}>
                 <View style={styles.halfColumn}>
-                  <Text style={styles.inputLabel}>Purchase Price (₹)</Text>
+                  <Text style={styles.inputLabel}>Purchase Price</Text>
                   <TextInput
                     style={styles.formInput}
                     placeholder="0.00"
@@ -974,7 +1011,7 @@ const ProductMasterScreen = ({navigation}: Props) => {
                   />
                 </View>
                 <View style={styles.halfColumn}>
-                  <Text style={styles.inputLabel}>Selling Price (₹)</Text>
+                  <Text style={styles.inputLabel}>Selling Price</Text>
                   <TextInput
                     style={styles.formInput}
                     placeholder="0.00"
@@ -987,32 +1024,78 @@ const ProductMasterScreen = ({navigation}: Props) => {
 
               <View style={styles.twoColumnRow}>
                 <View style={styles.halfColumn}>
-                  <Text style={styles.inputLabel}>Opening Stock</Text>
+                  <Text style={styles.inputLabel}>Category</Text>
                   <TextInput
                     style={styles.formInput}
-                    placeholder="0"
-                    keyboardType="numeric"
-                    value={openingStock}
-                    onChangeText={setOpeningStock}
+                    placeholder="Category"
+                    value={category}
+                    onChangeText={setCategory}
                   />
                 </View>
                 <View style={styles.halfColumn}>
                   <Text style={styles.inputLabel}>Unit</Text>
                   <TextInput
                     style={styles.formInput}
-                    placeholder="Piece / Liter / Kg"
+                    placeholder="Piece / Kg"
                     value={unit}
                     onChangeText={setUnit}
                   />
                 </View>
               </View>
 
-              <Text style={styles.inputLabel}>Category</Text>
+              <View style={styles.twoColumnRow}>
+                <View style={styles.halfColumn}>
+                  <Text style={styles.inputLabel}>GST (%)</Text>
+                  <TextInput
+                    style={styles.formInput}
+                    placeholder="0"
+                    keyboardType="numeric"
+                    value={gstRate}
+                    onChangeText={setGstRate}
+                  />
+                </View>
+                <View style={styles.halfColumn}>
+                  <Text style={styles.inputLabel}>CGST</Text>
+                  <TextInput
+                    style={styles.formInput}
+                    placeholder="0"
+                    keyboardType="numeric"
+                    value={cgst}
+                    onChangeText={setCgst}
+                  />
+                </View>
+              </View>
+
+              <View style={styles.twoColumnRow}>
+                <View style={styles.halfColumn}>
+                  <Text style={styles.inputLabel}>SGST</Text>
+                  <TextInput
+                    style={styles.formInput}
+                    placeholder="0"
+                    keyboardType="numeric"
+                    value={sgst}
+                    onChangeText={setSgst}
+                  />
+                </View>
+                <View style={styles.halfColumn}>
+                  <Text style={styles.inputLabel}>IGST</Text>
+                  <TextInput
+                    style={styles.formInput}
+                    placeholder="0"
+                    keyboardType="numeric"
+                    value={igst}
+                    onChangeText={setIgst}
+                  />
+                </View>
+              </View>
+
+              <Text style={styles.inputLabel}>Stock</Text>
               <TextInput
                 style={styles.formInput}
-                placeholder="e.g. Dairy, Snacks..."
-                value={category}
-                onChangeText={setCategory}
+                placeholder="0"
+                keyboardType="numeric"
+                value={openingStock}
+                onChangeText={setOpeningStock}
               />
             </ScrollView>
 
@@ -1228,6 +1311,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
+  },
+  colCategory: {
+    width: 120,
+    justifyContent: 'center',
+    paddingRight: 10,
+  },
+  colUnit: {
+    width: 80,
+    justifyContent: 'center',
+  },
+  colGST: {
+    width: 75,
+    justifyContent: 'center',
   },
 
   // Table Header

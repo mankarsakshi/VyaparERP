@@ -11,6 +11,7 @@ const dbConfig = {
 
 const tableFiles = [
     'users.sql',
+    'financial_years.sql',
     'customers.sql',
     'suppliers.sql',
     'categories.sql',

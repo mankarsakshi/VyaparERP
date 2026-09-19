@@ -459,9 +459,6 @@ const ProductCategoryMasterScreen = ({navigation}: Props) => {
               <Text style={[styles.columnHeader, styles.colName]}>
                 CATEGORY NAME
               </Text>
-              <Text style={[styles.columnHeader, styles.colDesc]}>
-                DESCRIPTION
-              </Text>
               <Text style={[styles.columnHeader, styles.colStatus]}>
                 STATUS
               </Text>
@@ -491,13 +488,6 @@ const ProductCategoryMasterScreen = ({navigation}: Props) => {
                   <View style={styles.colName}>
                     <Text style={styles.cellNameText} numberOfLines={1}>
                       {item.categoryName}
-                    </Text>
-                  </View>
-
-                  {/* Description Column */}
-                  <View style={styles.colDesc}>
-                    <Text style={styles.cellDescText} numberOfLines={1}>
-                      {item.description || '-'}
                     </Text>
                   </View>
 
@@ -902,11 +892,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   colName: {
-    width: 170,
-    justifyContent: 'center',
-    paddingRight: 10,
-  },
-  colDesc: {
     width: 220,
     justifyContent: 'center',
     paddingRight: 10,
@@ -967,12 +952,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '700',
     color: '#1e293b',
-  },
-
-  cellDescText: {
-    fontSize: 13,
-    color: '#64748b',
-    fontWeight: '400',
   },
 
   statusBadge: {

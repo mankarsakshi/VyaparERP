@@ -352,7 +352,7 @@ const AllSalesScreen = ({navigation, route}: Props) => {
         response?.data ||
         (Array.isArray(response) ? response : []);
 
-      if (Array.isArray(saleList) && saleList.length > 0) {
+      if (Array.isArray(saleList)) {
         setSales(saleList);
       }
     } catch (error: any) {
