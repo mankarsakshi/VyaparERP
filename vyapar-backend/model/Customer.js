@@ -1,4 +1,4 @@
-﻿const { getDB } = require('../database/db');
+const { getDB } = require('../database/db');
 
 // Create Customer
 const createCustomer = async (customerData) => {
@@ -15,8 +15,11 @@ const createCustomer = async (customerData) => {
             state,
             pincode,
             opening_balance,
+            bank_name,
+            account_number,
+            ifsc_code,
             status
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `;
 
     const values = [
@@ -30,6 +33,9 @@ const createCustomer = async (customerData) => {
         customerData.state || 'Maharashtra',
         customerData.pincode || null,
         Number(customerData.opening_balance) || 0.00,
+        customerData.bank_name || null,
+        customerData.account_number || null,
+        customerData.ifsc_code || null,
         customerData.status || 'active'
     ];
 
@@ -53,6 +59,9 @@ const getCustomers = async (userId, search = null) => {
             state,
             pincode,
             opening_balance,
+            bank_name,
+            account_number,
+            ifsc_code,
             status,
             created_at,
             updated_at
@@ -90,6 +99,9 @@ const getCustomerById = async (id, userId) => {
             state,
             pincode,
             opening_balance,
+            bank_name,
+            account_number,
+            ifsc_code,
             status,
             created_at,
             updated_at
@@ -115,6 +127,9 @@ const updateCustomer = async (id, customerData, userId) => {
             state = ?,
             pincode = ?,
             opening_balance = ?,
+            bank_name = ?,
+            account_number = ?,
+            ifsc_code = ?,
             status = ?
         WHERE id = ? AND user_id = ?
     `;
@@ -129,6 +144,9 @@ const updateCustomer = async (id, customerData, userId) => {
         customerData.state || 'Maharashtra',
         customerData.pincode || null,
         Number(customerData.opening_balance) || 0.00,
+        customerData.bank_name || null,
+        customerData.account_number || null,
+        customerData.ifsc_code || null,
         customerData.status || 'active',
         id,
         userId

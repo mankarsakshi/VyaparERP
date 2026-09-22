@@ -18,6 +18,36 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import {API_BASE_URL} from '../api/config';
 import {saleAPI} from '../api/saleService';
 
+const numberToWords = (num: number) => {
+  const a = ['','One ','Two ','Three ','Four ', 'Five ','Six ','Seven ','Eight ','Nine ','Ten ','Eleven ','Twelve ','Thirteen ','Fourteen ','Fifteen ','Sixteen ','Seventeen ','Eighteen ','Nineteen '];
+  const b = ['', '', 'Twenty','Thirty','Forty','Fifty', 'Sixty','Seventy','Eighty','Ninety'];
+
+  const inWords = (n: number) => {
+    let numStr = n.toString();
+    if (numStr.length > 9) return 'overflow';
+    let nArray = ('000000000' + n).substr(-9).match(/^(\d{2})(\d{2})(\d{2})(\d{1})(\d{2})$/);
+    if (!nArray) return ''; 
+    let str = '';
+    str += (nArray[1] != '00') ? (a[Number(nArray[1])] || b[Number(nArray[1][0])] + ' ' + a[Number(nArray[1][1])]) + 'Crore ' : '';
+    str += (nArray[2] != '00') ? (a[Number(nArray[2])] || b[Number(nArray[2][0])] + ' ' + a[Number(nArray[2][1])]) + 'Lakh ' : '';
+    str += (nArray[3] != '00') ? (a[Number(nArray[3])] || b[Number(nArray[3][0])] + ' ' + a[Number(nArray[3][1])]) + 'Thousand ' : '';
+    str += (nArray[4] != '0') ? (a[Number(nArray[4])] || b[Number(nArray[4][0])] + ' ' + a[Number(nArray[4][1])]) + 'Hundred ' : '';
+    str += (nArray[5] != '00') ? ((str != '') ? 'and ' : '') + (a[Number(nArray[5])] || b[Number(nArray[5][0])] + ' ' + a[Number(nArray[5][1])]) : '';
+    return str.trim();
+  };
+  
+  const intPart = Math.floor(num);
+  const decPart = Math.round((num - intPart) * 100);
+  
+  if (intPart === 0 && decPart === 0) return 'Zero Rupees Only';
+  
+  let result = inWords(intPart) + ' Rupees';
+  if (decPart > 0) {
+    result += ' and ' + inWords(decPart) + ' Paise';
+  }
+  return result + ' Only';
+};
+
 type Props = {
   navigation: any;
   route: any;
@@ -41,6 +71,7 @@ type Customer = {
   state?: string;
   pincode?: string;
   gstin?: string;
+  email?: string;
 };
 
 type SaleItem = {
@@ -277,6 +308,8 @@ const AddSaleScreen = ({navigation, route}: Props) => {
   const [modalVisible, setModalVisible] =
     useState(false);
 
+  const [showBillModal, setShowBillModal] = useState(false);
+
   const [editingIndex, setEditingIndex] =
     useState<number | null>(null);
 
@@ -382,6 +415,7 @@ const AddSaleScreen = ({navigation, route}: Props) => {
         state: item.state ?? item.customer_state ?? '',
         pincode: item.pincode ?? item.pin_code ?? item.postal_code ?? item.zip_code ?? '',
         gstin: item.gstin ?? item.gst_number ?? '',
+        email: item.email ?? item.customer_email ?? '',
       }));
 
       setCustomers(formattedCustomers);
@@ -752,10 +786,14 @@ const AddSaleScreen = ({navigation, route}: Props) => {
     const sale = route?.params?.sale || route?.params?.item || null;
     if (sale) {
       populateSaleFields(sale);
+      if (route?.params?.showBill) {
+        setShowBillModal(true);
+      }
     } else if (route?.params?.mode !== 'edit' && !route?.params?.saleId) {
       resetForm();
     }
-  }, [route?.params?.sale, route?.params?.item, route?.params?.mode, route?.params?.saleId]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [route?.params?.sale, route?.params?.item, route?.params?.mode, route?.params?.saleId, route?.params?.showBill]);
 
   const handleSaveSale = async () => {
     if (!Customer.trim()) {
@@ -844,6 +882,7 @@ const AddSaleScreen = ({navigation, route}: Props) => {
       cgst_amount: Number(summary.cgstAmount.toFixed(2)),
       sgst_amount: Number(summary.sgstAmount.toFixed(2)),
       igst_amount: Number(summary.igstAmount.toFixed(2)),
+      invoice_number: finalBillNo,
       bill_number: finalBillNo,
       bill_no: finalBillNo,
       SaleNo: finalBillNo,
@@ -859,6 +898,7 @@ const AddSaleScreen = ({navigation, route}: Props) => {
       GrandTotal: Number(summary.grandTotal.toFixed(2)),
       payment_method: PaymentMode,
       payment_mode: PaymentMode,
+      payment_status: PaymentMode === 'Unpaid' ? 'Unpaid' : 'Paid',
       notes: null,
       items: saleItems,
       sale_items: saleItems,
@@ -873,22 +913,10 @@ const AddSaleScreen = ({navigation, route}: Props) => {
         await saleAPI.createSale(payload);
       }
 
-      Alert.alert(
-        'Success',
-        isEditing ? 'Sale updated successfully.' : 'Sale added successfully.',
-        [
-          {
-            text: 'OK',
-            onPress: () => {
-              resetForm();
-              navigation.goBack();
-            },
-          },
-        ],
-      );
-    } catch (error) {
+      setShowBillModal(true);
+    } catch (error: any) {
       console.log('Save sale error:', error);
-      Alert.alert('Error', 'Unable to save sale.');
+      Alert.alert('Error', error.message || 'Unable to save sale.');
     } finally {
       setSaving(false);
     }
@@ -930,7 +958,7 @@ const AddSaleScreen = ({navigation, route}: Props) => {
 
         <View style={styles.headerTitleArea}>
           <Text style={styles.headerTitle}>
-            {isEditing ? 'Edit Sale' : 'Add Sale'}
+            {isEditing ? 'Edit Invoice' : 'Add Invoice'}
           </Text>
         </View>
       </View>
@@ -1014,33 +1042,41 @@ const AddSaleScreen = ({navigation, route}: Props) => {
                   <View style={styles.loaderContainer}>
                     <ActivityIndicator size="small" color="#ea7e30" />
                   </View>
-                ) : customers.length === 0 ? (
-                  <Text style={styles.emptyText}>No customers found</Text>
                 ) : (
-                  <ScrollView
-                    nestedScrollEnabled
-                    keyboardShouldPersistTaps="handled"
-                    style={{maxHeight: 180}}>
-                    {customers.map((cust: Customer) => (
-                      <TouchableOpacity
-                        key={cust.id}
-                        style={styles.dropdownMenuItem}
-                        onPress={() => {
-                          setCustomer(cust.name);
-                          setCustomerId(cust.id);
-                          setCustomerAddress(cust.address ?? '');
-                          setCustomerPhone(cust.phone ?? '');
-                          setCustomerState(cust.state ?? '');
-                          setCustomerPincode(cust.pincode ?? '');
-                          setShowCustomers(false);
-                        }}>
-                        <Text style={styles.dropdownMainText}>{cust.name}</Text>
-                        {!!cust.phone && (
-                          <Text style={styles.dropdownSubText}>{cust.phone}</Text>
-                        )}
-                      </TouchableOpacity>
-                    ))}
-                  </ScrollView>
+                  (() => {
+                    const filteredCustomers = customers.filter((cust: Customer) =>
+                      (cust.name || '').toLowerCase().includes((Customer || '').toLowerCase()),
+                    );
+                    if (filteredCustomers.length === 0) {
+                      return <Text style={styles.emptyText}>No customers found</Text>;
+                    }
+                    return (
+                      <ScrollView
+                        nestedScrollEnabled
+                        keyboardShouldPersistTaps="handled"
+                        style={{maxHeight: 180}}>
+                        {filteredCustomers.map((cust: Customer) => (
+                          <TouchableOpacity
+                            key={cust.id}
+                            style={styles.dropdownMenuItem}
+                            onPress={() => {
+                              setCustomer(cust.name);
+                              setCustomerId(cust.id);
+                              setCustomerAddress(cust.address ?? '');
+                              setCustomerPhone(cust.phone ?? '');
+                              setCustomerState(cust.state ?? '');
+                              setCustomerPincode(cust.pincode ?? '');
+                              setShowCustomers(false);
+                            }}>
+                            <Text style={styles.dropdownMainText}>{cust.name}</Text>
+                            {!!cust.phone && (
+                              <Text style={styles.dropdownSubText}>{cust.phone}</Text>
+                            )}
+                          </TouchableOpacity>
+                        ))}
+                      </ScrollView>
+                    );
+                  })()
                 )}
               </View>
             )}
@@ -1052,7 +1088,11 @@ const AddSaleScreen = ({navigation, route}: Props) => {
               <TextInput
                 style={styles.textInput}
                 value={Customer}
-                onChangeText={setCustomer}
+                onChangeText={(text) => {
+                  setCustomer(text);
+                  setCustomerId(null);
+                  setShowCustomers(true);
+                }}
                 placeholder="Enter customer name"
                 placeholderTextColor="#94a3b8"
               />
@@ -1561,7 +1601,7 @@ const AddSaleScreen = ({navigation, route}: Props) => {
                               <Text style={styles.dropdownMainText}>{prod.name}</Text>
                               <Text style={styles.dropdownSubText}>
                                 Rate: {formatCurrency(numberValue(prod.selling_price ?? prod.rate))}
-                                {'  '}•{'  '}GST: {numberValue(prod.gst) || 0}%
+                                {'  |  '}GST: {numberValue(prod.gst) || 0}%
                               </Text>
                             </TouchableOpacity>
                           ))
@@ -1719,6 +1759,173 @@ const AddSaleScreen = ({navigation, route}: Props) => {
           </KeyboardAvoidingView>
         </View>
       </Modal>
+
+      {/* BILL PREVIEW MODAL */}
+      <Modal
+        visible={showBillModal}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => {
+          setShowBillModal(false);
+          resetForm();
+          navigation.goBack();
+        }}>
+        <View style={styles.billGraphicOverlay}>
+          <View style={styles.billGraphicContainer}>
+            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.billGraphicScroll}>
+              
+              {/* 1. HEADER ROW */}
+              <View style={styles.billGraphicHeaderRow}>
+                <View style={styles.billGraphicLogoCircle}>
+                  <Text style={{fontSize: 28, color: '#ea7e30'}}>🛒</Text>
+                </View>
+                <View style={styles.billGraphicHeaderText}>
+                  <Text style={styles.billGraphicLogoText}>YOUR LOGO</Text>
+                  <Text style={styles.billGraphicBusinessName}>BUSINESS NAME</Text>
+                  <Text style={styles.billGraphicBusinessSub}>Address | Phone | GSTIN</Text>
+                </View>
+              </View>
+
+              {/* 2. TAX INVOICE BANNER */}
+              <View style={styles.billGraphicBanner}>
+                <Text style={styles.billGraphicBannerText}>TAX INVOICE</Text>
+              </View>
+
+              {/* 3. INVOICE NO AND DATE */}
+              <View style={styles.billGraphicMetaRow}>
+                <View style={{flexDirection: 'row'}}>
+                  <Text style={styles.billGraphicMetaLabel}>Invoice No:   </Text>
+                  <Text style={styles.billGraphicMetaValue}>{SaleNo || 'INV-001'}</Text>
+                </View>
+                <View style={{flexDirection: 'row'}}>
+                  <Text style={styles.billGraphicMetaLabel}>Date:   </Text>
+                  <Text style={styles.billGraphicMetaValue}>{SaleDate.split('-').reverse().join('-')}</Text>
+                </View>
+              </View>
+
+              {/* 4. CUSTOMER BOX */}
+              <View style={styles.billGraphicCustomerBox}>
+                <Text style={styles.billGraphicCustomerHeader}>Customer:</Text>
+                <View style={styles.billGraphicCustomerDetails}>
+                  <Text style={styles.billGraphicCustomerValue}>{Customer || 'N/A'}</Text>
+                  {!!customerPhone && (
+                    <View style={styles.billGraphicCustomerRow}>
+                      <Text style={styles.billGraphicCustomerRowLabel}>Phone: </Text>
+                      <Text style={styles.billGraphicCustomerRowValue}>{customerPhone}</Text>
+                    </View>
+                  )}
+                  {!!customers.find(c => c.id === String(customerId))?.email && (
+                    <View style={styles.billGraphicCustomerRow}>
+                      <Text style={styles.billGraphicCustomerRowLabel}>Email: </Text>
+                      <Text style={styles.billGraphicCustomerRowValue}>{customers.find(c => c.id === String(customerId))?.email}</Text>
+                    </View>
+                  )}
+                  {!!customerAddress && (
+                    <View style={styles.billGraphicCustomerRow}>
+                      <Text style={styles.billGraphicCustomerRowLabel}>Address: </Text>
+                      <Text style={styles.billGraphicCustomerRowValue}>{customerAddress}</Text>
+                    </View>
+                  )}
+                  {!!customers.find(c => c.id === String(customerId))?.gstin && (
+                    <View style={styles.billGraphicCustomerRow}>
+                      <Text style={styles.billGraphicCustomerRowLabel}>GSTIN: </Text>
+                      <Text style={styles.billGraphicCustomerRowValue}>{customers.find(c => c.id === String(customerId))?.gstin} (if available)</Text>
+                    </View>
+                  )}
+                </View>
+              </View>
+
+              {/* 5. PRODUCT TABLE */}
+              <View style={styles.billGraphicTable}>
+                <View style={styles.billGraphicTableHeader}>
+                  <Text style={[styles.billGraphicTableColHeader, {flex: 0.5, borderLeftWidth: 0}]}>#</Text>
+                  <Text style={[styles.billGraphicTableColHeader, {flex: 2}]}>Product</Text>
+                  <Text style={[styles.billGraphicTableColHeader, {flex: 1}]}>HSN</Text>
+                  <Text style={[styles.billGraphicTableColHeader, {flex: 1}]}>Qty</Text>
+                  <Text style={[styles.billGraphicTableColHeader, {flex: 1.2}]}>Rate</Text>
+                  <Text style={[styles.billGraphicTableColHeader, {flex: 1}]}>Disc</Text>
+                  <Text style={[styles.billGraphicTableColHeader, {flex: 1}]}>GST</Text>
+                  <Text style={[styles.billGraphicTableColHeader, {flex: 1.5}]}>Amount</Text>
+                </View>
+                
+                {items.filter(i => !isItemBlank(i)).map((item, idx) => {
+                  const calc = calculateItem(item);
+                  return (
+                    <View key={idx} style={styles.billGraphicTableRow}>
+                      <Text style={[styles.billGraphicTableCol, {flex: 0.5, borderLeftWidth: 0}]}>{idx + 1}</Text>
+                      <Text style={[styles.billGraphicTableCol, {flex: 2}]} numberOfLines={2}>{item.product}</Text>
+                      <Text style={[styles.billGraphicTableCol, {flex: 1}]} numberOfLines={1}>{item.hsn || '-'}</Text>
+                      <Text style={[styles.billGraphicTableCol, {flex: 1}]}>{item.quantity}</Text>
+                      <Text style={[styles.billGraphicTableCol, {flex: 1.2}]}>{calc.rate.toFixed(2)}</Text>
+                      <Text style={[styles.billGraphicTableCol, {flex: 1}]}>{item.discount ? `${item.discount}%` : '0%'}</Text>
+                      <Text style={[styles.billGraphicTableCol, {flex: 1}]}>{item.gst ? `${item.gst}%` : '0%'}</Text>
+                      <Text style={[styles.billGraphicTableCol, {flex: 1.5, textAlign: 'right', paddingRight: 6}]}>{calc.totalAmount.toFixed(2)}</Text>
+                    </View>
+                  );
+                })}
+                
+              </View>
+
+              {/* 5.5 TOTALS TABLE */}
+              <View style={styles.billGraphicTable}>
+                <View style={styles.billGraphicTableHeader}>
+                  <Text style={[styles.billGraphicTableColHeader, {flex: 1, borderLeftWidth: 0}]}>Subtotal</Text>
+                  <Text style={[styles.billGraphicTableColHeader, {flex: 1}]}>Discount</Text>
+                  <Text style={[styles.billGraphicTableColHeader, {flex: 1.2}]}>Taxable</Text>
+                  {summary.cgstAmount > 0 && <Text style={[styles.billGraphicTableColHeader, {flex: 1}]}>CGST</Text>}
+                  {summary.sgstAmount > 0 && <Text style={[styles.billGraphicTableColHeader, {flex: 1}]}>SGST</Text>}
+                  {summary.igstAmount > 0 && <Text style={[styles.billGraphicTableColHeader, {flex: 1}]}>IGST</Text>}
+                  <Text style={[styles.billGraphicTableColHeader, {flex: 1.2}]}>Total</Text>
+                </View>
+                <View style={[styles.billGraphicTableRow, {borderBottomWidth: 0}]}>
+                  <Text style={[styles.billGraphicTableCol, {flex: 1, borderLeftWidth: 0}]}>₹{summary.subtotal.toFixed(2)}</Text>
+                  <Text style={[styles.billGraphicTableCol, {flex: 1}]}>₹{summary.discountAmount.toFixed(2)}</Text>
+                  <Text style={[styles.billGraphicTableCol, {flex: 1.2}]}>₹{summary.taxableAmount.toFixed(2)}</Text>
+                  {summary.cgstAmount > 0 && <Text style={[styles.billGraphicTableCol, {flex: 1}]}>₹{summary.cgstAmount.toFixed(2)}</Text>}
+                  {summary.sgstAmount > 0 && <Text style={[styles.billGraphicTableCol, {flex: 1}]}>₹{summary.sgstAmount.toFixed(2)}</Text>}
+                  {summary.igstAmount > 0 && <Text style={[styles.billGraphicTableCol, {flex: 1}]}>₹{summary.igstAmount.toFixed(2)}</Text>}
+                  <Text style={[styles.billGraphicTableCol, {flex: 1.2, fontWeight: 'bold', color: '#ea7e30'}]}>₹{summary.grandTotal.toFixed(2)}</Text>
+                </View>
+              </View>
+
+              {/* 6. PAYMENT INFO */}
+              <View style={styles.billGraphicPaymentWrapper}>
+                 <View style={styles.billGraphicPaymentBox}>
+                   <Text style={styles.billGraphicPaymentLabel}>Payment Mode:</Text>
+                   <Text style={styles.billGraphicPaymentValue}>{PaymentMode}</Text>
+                 </View>
+                 <View style={styles.billGraphicPaymentBox}>
+                   <Text style={styles.billGraphicPaymentLabel}>Payment Status:</Text>
+                   <Text style={styles.billGraphicPaymentValue}>{PaymentMode === 'Unpaid' ? 'Unpaid' : 'Paid'}</Text>
+                 </View>
+              </View>
+
+              {/* 7. AMOUNT IN WORDS */}
+              <View style={styles.billGraphicWordsBox}>
+                 <Text style={styles.billGraphicWordsLabel}>Amount in Words:</Text>
+                 <Text style={styles.billGraphicWordsValue}>{numberToWords(summary.grandTotal)}</Text>
+              </View>
+
+              {/* 8. FOOTER */}
+              <View style={styles.billGraphicFooter}>
+                 <View style={styles.billGraphicFooterLine} />
+                 <Text style={styles.billGraphicFooterText}>Thank You For Your Business</Text>
+                 <View style={styles.billGraphicFooterLine} />
+              </View>
+            </ScrollView>
+            
+            <TouchableOpacity
+              style={styles.billGraphicCloseBtn}
+              onPress={() => {
+                setShowBillModal(false);
+                resetForm();
+                navigation.goBack();
+              }}>
+              <Text style={styles.billGraphicCloseBtnText}>Done</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 };
@@ -1751,6 +1958,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 14,
+    marginTop: 4,
     borderWidth: 1.5,
     borderColor: '#e2e8f0',
     shadowColor: '#000',
@@ -2683,5 +2891,338 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '800',
     color: '#ffffff',
+  },
+  billOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  billContainer: {
+    width: '100%',
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 16,
+    maxHeight: '90%',
+  },
+  billScroll: {
+    paddingBottom: 20,
+  },
+  billDashedLine: {
+    fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
+    color: '#000',
+    textAlign: 'center',
+    fontSize: 12,
+    marginVertical: 4,
+  },
+  billCenterText: {
+    fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
+    color: '#000',
+    textAlign: 'center',
+    fontSize: 12,
+  },
+  billCenterTextBold: {
+    fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
+    color: '#000',
+    textAlign: 'center',
+    fontSize: 14,
+    fontWeight: 'bold',
+    marginVertical: 2,
+  },
+  billRowSpace: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  billText: {
+    fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
+    color: '#000',
+    fontSize: 12,
+  },
+  billTextBold: {
+    fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
+    color: '#000',
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
+  billRow: {
+    flexDirection: 'row',
+  },
+  billCloseBtnFinal: {
+    backgroundColor: '#ea7e30',
+    padding: 14,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginTop: 10,
+  },
+  billCloseBtnTextFinal: {
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
+  
+  // =====================================================
+  // NEW GRAPHIC BILL STYLES
+  // =====================================================
+  billGraphicOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 16,
+  },
+  billGraphicContainer: {
+    width: '100%',
+    backgroundColor: '#fff',
+    borderRadius: 8,
+    maxHeight: '92%',
+    borderWidth: 1.5,
+    borderColor: '#475569',
+    overflow: 'hidden',
+  },
+  billGraphicScroll: {
+    padding: 16,
+    paddingBottom: 24,
+  },
+  billGraphicHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  billGraphicLogoCircle: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    borderWidth: 3,
+    borderColor: '#ea7e30',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 16,
+  },
+  billGraphicHeaderText: {
+    flex: 1,
+  },
+  billGraphicLogoText: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#ea7e30',
+  },
+  billGraphicBusinessName: {
+    fontSize: 22,
+    fontWeight: '900',
+    color: '#0f172a',
+    marginTop: -2,
+  },
+  billGraphicBusinessSub: {
+    fontSize: 12,
+    color: '#475569',
+  },
+  billGraphicBanner: {
+    backgroundColor: '#ea7e30',
+    paddingVertical: 8,
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  billGraphicBannerText: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: 'bold',
+    letterSpacing: 1,
+  },
+  billGraphicMetaRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 16,
+  },
+  billGraphicMetaLabel: {
+    fontSize: 13,
+    fontWeight: 'bold',
+    color: '#0f172a',
+  },
+  billGraphicMetaValue: {
+    fontSize: 13,
+    color: '#334155',
+  },
+  billGraphicCustomerBox: {
+    backgroundColor: '#f1f5f9',
+    borderRadius: 6,
+    padding: 12,
+    marginBottom: 16,
+  },
+  billGraphicCustomerHeader: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#0f172a',
+    marginBottom: 6,
+  },
+  billGraphicCustomerDetails: {
+    paddingLeft: 2,
+  },
+  billGraphicCustomerValue: {
+    fontSize: 13,
+    color: '#334155',
+    marginBottom: 4,
+  },
+  billGraphicCustomerRow: {
+    flexDirection: 'row',
+    marginBottom: 2,
+  },
+  billGraphicCustomerRowLabel: {
+    fontSize: 13,
+    color: '#334155',
+    width: 65,
+  },
+  billGraphicCustomerRowValue: {
+    fontSize: 13,
+    color: '#334155',
+    flex: 1,
+  },
+  billGraphicTable: {
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+    marginBottom: 16,
+  },
+  billGraphicTableHeader: {
+    flexDirection: 'row',
+    backgroundColor: '#ea7e30',
+  },
+  billGraphicTableColHeader: {
+    color: '#fff',
+    fontSize: 11,
+    fontWeight: 'bold',
+    paddingVertical: 8,
+    paddingHorizontal: 4,
+    textAlign: 'center',
+    borderLeftWidth: 1,
+    borderLeftColor: '#fbd38d',
+  },
+  billGraphicTableRow: {
+    flexDirection: 'row',
+    borderBottomWidth: 1,
+    borderBottomColor: '#e2e8f0',
+  },
+  billGraphicTableCol: {
+    fontSize: 11,
+    color: '#334155',
+    paddingVertical: 8,
+    paddingHorizontal: 4,
+    textAlign: 'center',
+    borderLeftWidth: 1,
+    borderLeftColor: '#e2e8f0',
+  },
+  billGraphicTotalsWrapper: {
+    flexDirection: 'row',
+  },
+  billGraphicTotalsLeft: {
+    flex: 5.7,
+    borderRightWidth: 1,
+    borderRightColor: '#e2e8f0',
+  },
+  billGraphicTotalsRight: {
+    flex: 3.5,
+  },
+  billGraphicTotalRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingVertical: 6,
+    paddingHorizontal: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e2e8f0',
+  },
+  billGraphicTotalLabel: {
+    fontSize: 12,
+    color: '#334155',
+    flex: 1,
+    flexWrap: 'wrap',
+  },
+  billGraphicTotalValue: {
+    fontSize: 12,
+    color: '#0f172a',
+    textAlign: 'right',
+    flexShrink: 0,
+    marginLeft: 4,
+  },
+  billGraphicGrandTotalRow: {
+    backgroundColor: '#ffedd5',
+    borderBottomWidth: 0,
+    paddingVertical: 8,
+  },
+  billGraphicGrandTotalLabel: {
+    fontSize: 13,
+    fontWeight: 'bold',
+    color: '#0f172a',
+    flex: 1,
+    flexWrap: 'wrap',
+  },
+  billGraphicGrandTotalValue: {
+    fontSize: 13,
+    fontWeight: 'bold',
+    color: '#0f172a',
+    textAlign: 'right',
+    flexShrink: 0,
+    marginLeft: 4,
+  },
+  billGraphicPaymentWrapper: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 16,
+  },
+  billGraphicPaymentBox: {
+    backgroundColor: '#f1f5f9',
+    padding: 12,
+    borderRadius: 6,
+    flex: 0.48,
+  },
+  billGraphicPaymentLabel: {
+    fontSize: 12,
+    fontWeight: 'bold',
+    color: '#0f172a',
+    marginBottom: 4,
+  },
+  billGraphicPaymentValue: {
+    fontSize: 13,
+    color: '#334155',
+  },
+  billGraphicWordsBox: {
+    backgroundColor: '#f1f5f9',
+    padding: 12,
+    borderRadius: 6,
+    marginBottom: 24,
+  },
+  billGraphicWordsLabel: {
+    fontSize: 12,
+    fontWeight: 'bold',
+    color: '#0f172a',
+    marginBottom: 4,
+  },
+  billGraphicWordsValue: {
+    fontSize: 13,
+    color: '#334155',
+  },
+  billGraphicFooter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  billGraphicFooterLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: '#ea7e30',
+  },
+  billGraphicFooterText: {
+    marginHorizontal: 12,
+    fontSize: 13,
+    fontStyle: 'italic',
+    color: '#0f172a',
+  },
+  billGraphicCloseBtn: {
+    backgroundColor: '#ea7e30',
+    paddingVertical: 14,
+    alignItems: 'center',
+  },
+  billGraphicCloseBtnText: {
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 16,
   },
 });

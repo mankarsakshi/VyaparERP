@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useState, useEffect} from 'react';
 import {
   View,
   Text,
@@ -13,6 +13,7 @@ import {
   Switch,
 } from 'react-native';
 import {Picker} from '@react-native-picker/picker';
+import {API_BASE_URL} from '../api/config';
 
 type Props = {
   navigation: any;
@@ -52,14 +53,98 @@ const UNITS = [
 
 const GST_RATES = ['0%', '5%', '12%', '18%', '28%'];
 
+const getCandidateUrls = (path: string): string[] => {
+  const list = [`${API_BASE_URL}${path}`];
+
+  if (Platform.OS === 'android') {
+    const emu = `http://10.0.2.2:8080${path}`;
+    const ip = `http://10.85.57.27:8080${path}`;
+    const loc = `http://localhost:8080${path}`;
+
+    if (!list.includes(emu)) list.push(emu);
+    if (!list.includes(ip)) list.push(ip);
+    if (!list.includes(loc)) list.push(loc);
+  } else {
+    const loc = `http://localhost:8080${path}`;
+    if (!list.includes(loc)) list.push(loc);
+  }
+
+  return list;
+};
+
+const fetchWithFallback = async (
+  path: string,
+  options?: RequestInit,
+): Promise<Response> => {
+  const urls = getCandidateUrls(path);
+  let lastErr: any = null;
+
+  for (const url of urls) {
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 3500);
+
+      const res = await fetch(url, {
+        ...(options || {}),
+        signal: controller.signal,
+      });
+
+      clearTimeout(timeoutId);
+
+      if (res.ok || res.status < 500) {
+        return res;
+      }
+    } catch (err) {
+      lastErr = err;
+    }
+  }
+
+  throw lastErr || new Error(`Unable to reach backend for ${path}`);
+};
+
 const AddProductScreen = ({navigation, route}: Props) => {
   const user = route?.params?.user;
 
+  const [categories, setCategoriesList] = useState<string[]>(CATEGORIES);
+  const [units, setUnitsList] = useState<string[]>(UNITS);
+  const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
+  const [showUnitDropdown, setShowUnitDropdown] = useState(false);
+  const [showGstDropdown, setShowGstDropdown] = useState(false);
+  
   // Basic Info States
   const [name, setName] = useState('');
   const [sku, setSku] = useState('');
-  const [category, setCategory] = useState('Electronics');
-  const [unit, setUnit] = useState('Piece');
+  const [category, setCategory] = useState('');
+  const [unit, setUnit] = useState('');
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const catRes = await fetchWithFallback('/api/categories');
+        if (catRes.ok) {
+          const result = await catRes.json();
+          const data = Array.isArray(result?.data) ? result.data : (Array.isArray(result) ? result : []);
+          const dbCatNames: string[] = data.map((c: any) => c.category_name || c.name).filter(Boolean);
+          if (dbCatNames.length > 0) {
+            setCategoriesList(Array.from(new Set([...CATEGORIES, ...dbCatNames])));
+          }
+        }
+        
+        const unitRes = await fetchWithFallback('/api/units');
+        if (unitRes.ok) {
+          const result = await unitRes.json();
+          const data = Array.isArray(result?.data) ? result.data : (Array.isArray(result) ? result : []);
+          const dbUnitNames: string[] = data.map((u: any) => u.unit_name || u.name).filter(Boolean);
+          if (dbUnitNames.length > 0) {
+            setUnitsList(Array.from(new Set([...UNITS, ...dbUnitNames])));
+          }
+        }
+      } catch (e) {
+        console.log('Error fetching categories/units:', e);
+      }
+    };
+    fetchData();
+  }, []);
 
   // Pricing & Tax States
   const [purchasePrice, setPurchasePrice] = useState('');
@@ -214,16 +299,42 @@ const AddProductScreen = ({navigation, route}: Props) => {
             {/* CATEGORY SELECTOR */}
             <View style={styles.inputGroup}>
               <Text style={styles.label}>Category</Text>
-              <View style={styles.pickerContainer}>
-                <Picker
-                  selectedValue={category}
-                  onValueChange={setCategory}
-                  style={styles.pickerStyle}>
-                  <Picker.Item label="Select or type category" value="" />
-                  {CATEGORIES.map(cat => (
-                    <Picker.Item key={cat} label={cat} value={cat} />
-                  ))}
-                </Picker>
+              <View style={styles.dropdownContainer}>
+                <TouchableOpacity
+                  style={styles.selectBtn}
+                  onPress={() => {
+                    setShowCategoryDropdown(!showCategoryDropdown);
+                    setShowUnitDropdown(false);
+                    setShowGstDropdown(false);
+                  }}
+                  activeOpacity={0.8}>
+                  <Text style={[styles.selectBtnText, !category && styles.placeholderText]}>
+                    {category || 'Select category'}
+                  </Text>
+                  <Text style={styles.arrowIcon}>{showCategoryDropdown ? '▲' : '▼'}</Text>
+                </TouchableOpacity>
+
+                {showCategoryDropdown && (
+                  <View style={styles.dropdownMenu}>
+                    <ScrollView nestedScrollEnabled keyboardShouldPersistTaps="handled" style={{maxHeight: 150}}>
+                      {categories.length === 0 ? (
+                        <Text style={[styles.emptyText, {padding: 10}]}>No categories found</Text>
+                      ) : (
+                        categories.map((c) => (
+                          <TouchableOpacity
+                            key={c}
+                            style={styles.dropdownMenuItem}
+                            onPress={() => {
+                              setCategory(c);
+                              setShowCategoryDropdown(false);
+                            }}>
+                            <Text style={styles.dropdownMainText}>{c}</Text>
+                          </TouchableOpacity>
+                        ))
+                      )}
+                    </ScrollView>
+                  </View>
+                )}
               </View>
             </View>
 
@@ -231,29 +342,79 @@ const AddProductScreen = ({navigation, route}: Props) => {
             <View style={styles.rowInputs}>
               <View style={[styles.inputGroup, {flex: 1, marginRight: 8}]}>
                 <Text style={styles.label}>Unit</Text>
-                <View style={styles.pickerContainer}>
-                  <Picker
-                    selectedValue={unit}
-                    onValueChange={setUnit}
-                    style={styles.pickerStyle}>
-                    {UNITS.map(u => (
-                      <Picker.Item key={u} label={u} value={u} />
-                    ))}
-                  </Picker>
+                <View style={styles.dropdownContainer}>
+                  <TouchableOpacity
+                    style={styles.selectBtn}
+                    onPress={() => {
+                      setShowUnitDropdown(!showUnitDropdown);
+                      setShowCategoryDropdown(false);
+                      setShowGstDropdown(false);
+                    }}
+                    activeOpacity={0.8}>
+                    <Text style={[styles.selectBtnText, !unit && styles.placeholderText]}>
+                      {unit || 'Select unit'}
+                    </Text>
+                    <Text style={styles.arrowIcon}>{showUnitDropdown ? '▲' : '▼'}</Text>
+                  </TouchableOpacity>
+
+                  {showUnitDropdown && (
+                    <View style={styles.dropdownMenu}>
+                      <ScrollView nestedScrollEnabled keyboardShouldPersistTaps="handled" style={{maxHeight: 150}}>
+                        {units.length === 0 ? (
+                          <Text style={[styles.emptyText, {padding: 10}]}>No units found</Text>
+                        ) : (
+                          units.map((u) => (
+                            <TouchableOpacity
+                              key={u}
+                              style={styles.dropdownMenuItem}
+                              onPress={() => {
+                                setUnit(u);
+                                setShowUnitDropdown(false);
+                              }}>
+                              <Text style={styles.dropdownMainText}>{u}</Text>
+                            </TouchableOpacity>
+                          ))
+                        )}
+                      </ScrollView>
+                    </View>
+                  )}
                 </View>
               </View>
 
               <View style={[styles.inputGroup, {flex: 1, marginLeft: 8}]}>
                 <Text style={styles.label}>GST Rate</Text>
-                <View style={styles.pickerContainer}>
-                  <Picker
-                    selectedValue={gstRate}
-                    onValueChange={setGstRate}
-                    style={styles.pickerStyle}>
-                    {GST_RATES.map(rate => (
-                      <Picker.Item key={rate} label={rate} value={rate} />
-                    ))}
-                  </Picker>
+                <View style={styles.dropdownContainer}>
+                  <TouchableOpacity
+                    style={styles.selectBtn}
+                    onPress={() => {
+                      setShowGstDropdown(!showGstDropdown);
+                      setShowCategoryDropdown(false);
+                      setShowUnitDropdown(false);
+                    }}
+                    activeOpacity={0.8}>
+                    <Text style={[styles.selectBtnText, !gstRate && styles.placeholderText]}>
+                      {gstRate || 'Select GST'}
+                    </Text>
+                    <Text style={styles.arrowIcon}>{showGstDropdown ? '▲' : '▼'}</Text>
+                  </TouchableOpacity>
+
+                  {showGstDropdown && (
+                    <View style={styles.dropdownMenu}>
+                      <ScrollView nestedScrollEnabled keyboardShouldPersistTaps="handled" style={{maxHeight: 150}}>
+                        {GST_RATES.map((rate) => (
+                          <TouchableOpacity
+                            key={rate}
+                            style={styles.dropdownMenuItem}
+                            onPress={() => {
+                              setGstRate(rate);
+                              setShowGstDropdown(false);
+                            }}>
+                            <Text style={styles.dropdownMainText}>{rate}</Text>
+                          </TouchableOpacity>
+                        ))}
+                      </ScrollView>
+                    </View>
+                  )}
                 </View>
               </View>
             </View>
@@ -543,19 +704,61 @@ const styles = StyleSheet.create({
     color: '#0f172a',
   },
 
-  pickerContainer: {
+  dropdownContainer: {
+    position: 'relative',
+    zIndex: 9999,
+  },
+  selectBtn: {
+    height: 44,
     backgroundColor: '#ffffff',
     borderWidth: 1,
     borderColor: '#d1d5db',
     borderRadius: 9,
-    overflow: 'hidden',
-    justifyContent: 'center',
-    height: 44, // roughly matches text input height
+    paddingHorizontal: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
   },
-
-  pickerStyle: {
-    width: '100%',
+  selectBtnText: {
+    fontSize: 14,
     color: '#0f172a',
+    flex: 1,
+  },
+  placeholderText: {
+    color: '#94a3b8',
+  },
+  arrowIcon: {
+    fontSize: 10,
+    color: '#64748b',
+  },
+  dropdownMenu: {
+    position: 'absolute',
+    top: 48,
+    left: 0,
+    right: 0,
+    backgroundColor: '#ffffff',
+    borderRadius: 9,
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 4},
+    shadowOpacity: 0.1,
+    shadowRadius: 6,
+    elevation: 8,
+    zIndex: 9999,
+    overflow: 'hidden',
+    maxHeight: 150,
+  },
+  dropdownMenuItem: {
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f1f5f9',
+  },
+  dropdownMainText: {
+    fontSize: 14,
+    color: '#1e293b',
+    fontWeight: '500',
   },
 
   textArea: {

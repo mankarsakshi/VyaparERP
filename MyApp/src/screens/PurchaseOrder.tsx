@@ -1439,31 +1439,6 @@ const PurchaseOrderScreen = ({navigation, route}: Props) => {
             </View>
           </View>
 
-          <View style={[styles.inputRow, {marginTop: 12}]}>
-            <View style={styles.halfInputCol}>
-              <Text style={styles.fieldLabel}>Expected Delivery Date</Text>
-              <TouchableOpacity
-                style={styles.datePickerBtn}
-                onPress={() => setShowDeliveryDatePicker(true)}
-                activeOpacity={0.8}>
-                <Text style={[styles.datePickerText, !DeliveryDate && {color: '#94a3b8'}]}>
-                  {DeliveryDate || 'DD/MM/YYYY'}
-                </Text>
-                <Text style={styles.calendarIcon}>📅</Text>
-              </TouchableOpacity>
-            </View>
-
-            <View style={styles.halfInputCol}>
-              <Text style={styles.fieldLabel}>Status</Text>
-              <TextInput
-                style={styles.textInput}
-                value={status}
-                onChangeText={setStatus}
-                placeholder="Draft / Pending"
-                placeholderTextColor="#94a3b8"
-              />
-            </View>
-          </View>
         </View>
 
         {showPODatePicker && (
@@ -2101,6 +2076,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 14,
+    marginTop: 4,
     borderWidth: 1.5,
     borderColor: '#e2e8f0',
     shadowColor: '#000',

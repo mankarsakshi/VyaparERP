@@ -94,7 +94,10 @@ const ViewPurchaseOrderScreen = ({navigation, route}: Props) => {
   const purchaseOrderId =
     route?.params?.purchaseOrderId ||
     route?.params?.id ||
-    route?.params?.purchaseOrder?.id;
+    route?.params?.purchaseOrder?.id ||
+    (route?.params?.purchaseOrder as any)?.poid ||
+    (route?.params?.order as any)?.poid ||
+    route?.params?.order?.id;
 
   const passedOrder =
     route?.params?.purchaseOrder || route?.params?.order;
@@ -251,7 +254,7 @@ const ViewPurchaseOrderScreen = ({navigation, route}: Props) => {
 
   const handleEdit = () => {
     setIsMenuOpen(false);
-    const currentId = order?.id || purchaseOrderId;
+    const currentId = order?.id || (order as any)?.poid || purchaseOrderId;
     if (!currentId) {
       Alert.alert('Error', 'Purchase Order ID not found.');
       return;
@@ -267,7 +270,7 @@ const ViewPurchaseOrderScreen = ({navigation, route}: Props) => {
 
   const handleDelete = () => {
     setIsMenuOpen(false);
-    const currentId = order?.id || purchaseOrderId;
+    const currentId = order?.id || (order as any)?.poid || purchaseOrderId;
     if (!currentId) {
       Alert.alert('Error', 'Purchase Order ID not found.');
       return;

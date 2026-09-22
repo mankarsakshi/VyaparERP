@@ -1,4 +1,4 @@
-﻿const Customer = require('../model/Customer');
+const Customer = require('../model/Customer');
 
 // 1. CREATE CUSTOMER
 exports.createCustomer = async (req, res) => {
@@ -22,6 +22,9 @@ exports.createCustomer = async (req, res) => {
             state,
             pincode,
             opening_balance,
+            bank_name,
+            account_number,
+            ifsc_code,
             status
         } = req.body;
 
@@ -40,6 +43,9 @@ exports.createCustomer = async (req, res) => {
         const trimmedCity = city ? city.trim() : null;
         const trimmedState = state ? state.trim() : 'Maharashtra';
         const trimmedPincode = pincode ? pincode.trim() : null;
+        const trimmedBankName = bank_name ? bank_name.trim() : null;
+        const trimmedAccountNumber = account_number ? account_number.trim() : null;
+        const trimmedIfscCode = ifsc_code ? ifsc_code.trim().toUpperCase() : null;
 
         const customerId = await Customer.createCustomer({
             user_id: userId,
@@ -52,6 +58,9 @@ exports.createCustomer = async (req, res) => {
             state: trimmedState,
             pincode: trimmedPincode,
             opening_balance: Number(opening_balance) || 0.00,
+            bank_name: trimmedBankName,
+            account_number: trimmedAccountNumber,
+            ifsc_code: trimmedIfscCode,
             status: status || 'active'
         });
 
@@ -70,6 +79,9 @@ exports.createCustomer = async (req, res) => {
                 state: trimmedState,
                 pincode: trimmedPincode,
                 opening_balance: Number(opening_balance) || 0.00,
+                bank_name: trimmedBankName,
+                account_number: trimmedAccountNumber,
+                ifsc_code: trimmedIfscCode,
                 status: status || 'active'
             }
         });

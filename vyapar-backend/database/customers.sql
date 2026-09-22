@@ -1,4 +1,4 @@
-﻿CREATE TABLE IF NOT EXISTS customers (
+CREATE TABLE IF NOT EXISTS customers (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
     customer_name VARCHAR(150) NOT NULL,
@@ -10,6 +10,9 @@
     state VARCHAR(100) DEFAULT 'Maharashtra',
     pincode VARCHAR(20) NULL,
     opening_balance DECIMAL(12,2) DEFAULT 0.00,
+    bank_name VARCHAR(150) NULL,
+    account_number VARCHAR(100) NULL,
+    ifsc_code VARCHAR(50) NULL,
     status ENUM('active', 'inactive') DEFAULT 'active',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,

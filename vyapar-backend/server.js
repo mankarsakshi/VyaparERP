@@ -728,6 +728,9 @@ app.post('/reset-password', async (req, res) => {
 const customerRoutes = require('./routes/customerRoutes');
 app.use('/api/customers', customerRoutes);
 
+const saleRoutes = require('./routes/saleRoutes');
+app.use('/api/sales', saleRoutes);
+
 const purchaseRoutes = require('./routes/purchaseRoutes');
 app.use('/api/purchases', purchaseRoutes);
 

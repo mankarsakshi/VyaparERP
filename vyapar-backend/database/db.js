@@ -78,7 +78,8 @@ async function initializeDatabase() {
                 continue;
             }
 
-            const sql = fs.readFileSync(filePath, 'utf8');
+            let sql = fs.readFileSync(filePath, 'utf8');
+            sql = sql.replace(/^\uFEFF/, '');
 
             if (sql.trim()) {
                 await db.query(sql);
@@ -90,8 +91,26 @@ async function initializeDatabase() {
 
         try {
             await db.query(`ALTER TABLE purchase_orders MODIFY COLUMN status ENUM('Pending', 'Approved', 'Received', 'Cancelled') DEFAULT 'Pending'`);
-        } catch (e) {
-            // ignore if already modified
+        } catch (e) {}
+
+        // Migrate financial_years table to new schema
+        const migrations = [
+            `ALTER TABLE financial_years CHANGE year_name fy_name VARCHAR(50) NOT NULL`,
+            `ALTER TABLE financial_years DROP COLUMN is_current`,
+            `ALTER TABLE financial_years ADD COLUMN fy_code VARCHAR(20)`,
+            `ALTER TABLE financial_years ADD COLUMN assessment_year VARCHAR(20)`,
+            `ALTER TABLE financial_years ADD COLUMN is_active BOOLEAN DEFAULT true`,
+            `ALTER TABLE financial_years ADD COLUMN is_default BOOLEAN DEFAULT false`,
+            `ALTER TABLE financial_years ADD COLUMN is_locked BOOLEAN DEFAULT false`,
+            `ALTER TABLE financial_years ADD COLUMN description TEXT`
+        ];
+
+        for (const query of migrations) {
+            try {
+                await db.query(query);
+            } catch (e) {
+                // Ignore errors (e.g. column already exists)
+            }
         }
 
         return db;

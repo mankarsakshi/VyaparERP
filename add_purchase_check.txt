@@ -1,0 +1,86 @@
+<View style={styles.container}>
+      {/* HEADER */}
+
+      <View style={styles.header}>
+        <TouchableOpacity
+          onPress={() =>
+            navigation.goBack()
+          }
+          style={styles.backButton}
+          hitSlop={{
+            top: 10,
+            bottom: 10,
+            left: 10,
+            right: 10,
+          }}>
+          <Text
+            style={
+              styles.arrow
+            }>
+            ←
+          </Text>
+        </TouchableOpacity>
+
+        <Text
+          style={
+            styles.headerTitle
+          }>
+          {isEditing
+            ? 'Edit Purchase'
+            : 'Add Purchase'}
+        </Text>
+      </View>
+
+      {/* BODY */}
+
+      <ScrollView
+        style={styles.scrollContent}
+        contentContainerStyle={
+          styles.scrollContentContainer
+        }
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={
+          false
+        }>
+        {/* PURCHASE INFORMATION */}
+
+        <View style={styles.formCard}>
+        <Text style={styles.sectionTitle}>
+          Purchase Information
+        </Text>
+
+        {/* BILL NUMBER + DATE */}
+
+        <View style={styles.row}>
+          <View style={styles.half}>
+            <Text
+              style={
+                styles.label
+              }>
+              Bill Number
+            </Text>
+
+            <TextInput
+              style={
+                styles.input
+              }
+              value={PurchaseNo}
+              onChangeText={
+                setPurchaseNo
+              }
+              placeholder="PUR-001"
+              placeholderTextColor="#d1d5db"
+            />
+          </View>
+
+          <View style={styles.half}>
+            <Text
+              style={
+                styles.label
+              }>
+              Purchase Date
+            </Text>
+
+            <TouchableOpacity
+              style={
+                styles.dateInputCo

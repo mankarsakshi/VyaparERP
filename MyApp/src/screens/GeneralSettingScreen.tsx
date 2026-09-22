@@ -75,43 +75,12 @@ const GeneralSettingScreen = ({navigation, route}: Props) => {
   const [email, setEmail] = useState('contact@mybusiness.com');
   const [gstin, setGstin] = useState('27AADCB2230M1Z2');
 
-  // 2. Financial Year
-  const [fy, setFy] = useState('2026-2027');
-  const [startDate, setStartDate] = useState('01-Apr-2026');
-  const [endDate, setEndDate] = useState('31-Mar-2027');
-
-  // 3. Invoice Settings
-  const [invPrefix, setInvPrefix] = useState('INV-');
-  const [invNumber, setInvNumber] = useState('001');
-  const [autoNum, setAutoNum] = useState(true);
-
-  // 4. Tax Settings
-  const [gstEnabled, setGstEnabled] = useState(true);
-  const [defaultGst, setDefaultGst] = useState('18');
-  const [taxInclusive, setTaxInclusive] = useState(false);
-
-  // 5. Currency & Format
-  const [currency, setCurrency] = useState('₹');
-  const [dateFormat, setDateFormat] = useState('DD-MM-YYYY');
-  const [decimalPlaces, setDecimalPlaces] = useState('2');
-
-  // 6. Document Settings
-  const [showLogo, setShowLogo] = useState(true);
-  const [showGstin, setShowGstin] = useState(true);
-  const [signature, setSignature] = useState('Authorized Signatory');
-  const [terms, setTerms] = useState('1. Goods once sold will not be taken back.\n2. Subject to local jurisdiction.');
-
-  // 7. Payment Settings
-  const [defaultPayment, setDefaultPayment] = useState('Cash');
-  const [creditPeriod, setCreditPeriod] = useState('30 Days');
-  const [dueDate, setDueDate] = useState('Net 30');
-
-  // 8. Notification Settings
+  // 2. Notification Settings
   const [lowStock, setLowStock] = useState(true);
   const [paymentDue, setPaymentDue] = useState(true);
   const [invoiceAlerts, setInvoiceAlerts] = useState(false);
 
-  // 10. Security
+  // 4. Security
   const [appLock, setAppLock] = useState(false);
   const [sessionTimeout, setSessionTimeout] = useState('30 Mins');
 
@@ -173,116 +142,8 @@ const GeneralSettingScreen = ({navigation, route}: Props) => {
             </View>
           </AccordionSection>
 
-          {/* 2. Financial Year */}
-          <AccordionSection title="2. Financial Year">
-            <View style={styles.inputGroup}>
-              <Text style={styles.label}>Current Financial Year</Text>
-              <TextInput style={styles.input} value={fy} onChangeText={setFy} />
-            </View>
-            <View style={styles.rowInputs}>
-              <View style={[styles.inputGroup, {flex: 1, marginRight: 8}]}>
-                <Text style={styles.label}>Start Date</Text>
-                <TextInput style={styles.input} value={startDate} onChangeText={setStartDate} />
-              </View>
-              <View style={[styles.inputGroup, {flex: 1, marginLeft: 8}]}>
-                <Text style={styles.label}>End Date</Text>
-                <TextInput style={styles.input} value={endDate} onChangeText={setEndDate} />
-              </View>
-            </View>
-          </AccordionSection>
-
-          {/* 3. Invoice Settings */}
-          <AccordionSection title="3. Invoice Settings">
-            <View style={styles.rowInputs}>
-              <View style={[styles.inputGroup, {flex: 1, marginRight: 8}]}>
-                <Text style={styles.label}>Invoice Prefix</Text>
-                <TextInput style={styles.input} value={invPrefix} onChangeText={setInvPrefix} />
-              </View>
-              <View style={[styles.inputGroup, {flex: 1, marginLeft: 8}]}>
-                <Text style={styles.label}>Invoice Number</Text>
-                <TextInput style={styles.input} value={invNumber} onChangeText={setInvNumber} />
-              </View>
-            </View>
-            <View style={styles.switchGroup}>
-              <Text style={styles.label}>Auto Numbering</Text>
-              <Switch value={autoNum} onValueChange={setAutoNum} trackColor={{true: '#ea7e30'}} />
-            </View>
-          </AccordionSection>
-
-          {/* 4. Tax Settings */}
-          <AccordionSection title="4. Tax Settings">
-            <View style={styles.switchGroup}>
-              <Text style={styles.label}>GST Enabled</Text>
-              <Switch value={gstEnabled} onValueChange={setGstEnabled} trackColor={{true: '#ea7e30'}} />
-            </View>
-            <View style={styles.inputGroup}>
-              <Text style={styles.label}>Default GST Rate (%)</Text>
-              <TextInput style={styles.input} value={defaultGst} onChangeText={setDefaultGst} keyboardType="numeric" />
-            </View>
-            <View style={styles.switchGroup}>
-              <Text style={styles.label}>Tax Inclusive by Default</Text>
-              <Switch value={taxInclusive} onValueChange={setTaxInclusive} trackColor={{true: '#ea7e30'}} />
-            </View>
-          </AccordionSection>
-
-          {/* 5. Currency & Format */}
-          <AccordionSection title="5. Currency & Format">
-            <View style={styles.rowInputs}>
-              <View style={[styles.inputGroup, {flex: 1, marginRight: 8}]}>
-                <Text style={styles.label}>Currency</Text>
-                <TextInput style={styles.input} value={currency} onChangeText={setCurrency} />
-              </View>
-              <View style={[styles.inputGroup, {flex: 1, marginLeft: 8}]}>
-                <Text style={styles.label}>Decimal Places</Text>
-                <TextInput style={styles.input} value={decimalPlaces} onChangeText={setDecimalPlaces} keyboardType="numeric" />
-              </View>
-            </View>
-            <View style={styles.inputGroup}>
-              <Text style={styles.label}>Date Format</Text>
-              <TextInput style={styles.input} value={dateFormat} onChangeText={setDateFormat} />
-            </View>
-          </AccordionSection>
-
-          {/* 6. Document Settings */}
-          <AccordionSection title="6. Document Settings">
-            <View style={styles.switchGroup}>
-              <Text style={styles.label}>Show Logo on Invoice</Text>
-              <Switch value={showLogo} onValueChange={setShowLogo} trackColor={{true: '#ea7e30'}} />
-            </View>
-            <View style={styles.switchGroup}>
-              <Text style={styles.label}>Show GSTIN on Invoice</Text>
-              <Switch value={showGstin} onValueChange={setShowGstin} trackColor={{true: '#ea7e30'}} />
-            </View>
-            <View style={styles.inputGroup}>
-              <Text style={styles.label}>Signature Text</Text>
-              <TextInput style={styles.input} value={signature} onChangeText={setSignature} />
-            </View>
-            <View style={styles.inputGroup}>
-              <Text style={styles.label}>Terms & Conditions</Text>
-              <TextInput style={[styles.input, styles.textArea]} value={terms} onChangeText={setTerms} multiline />
-            </View>
-          </AccordionSection>
-
-          {/* 7. Payment Settings */}
-          <AccordionSection title="7. Payment Settings">
-            <View style={styles.inputGroup}>
-              <Text style={styles.label}>Default Payment Mode</Text>
-              <TextInput style={styles.input} value={defaultPayment} onChangeText={setDefaultPayment} />
-            </View>
-            <View style={styles.rowInputs}>
-              <View style={[styles.inputGroup, {flex: 1, marginRight: 8}]}>
-                <Text style={styles.label}>Credit Period</Text>
-                <TextInput style={styles.input} value={creditPeriod} onChangeText={setCreditPeriod} />
-              </View>
-              <View style={[styles.inputGroup, {flex: 1, marginLeft: 8}]}>
-                <Text style={styles.label}>Due Date Policy</Text>
-                <TextInput style={styles.input} value={dueDate} onChangeText={setDueDate} />
-              </View>
-            </View>
-          </AccordionSection>
-
-          {/* 8. Notification Settings */}
-          <AccordionSection title="8. Notification Settings">
+          {/* 2. Notification Settings */}
+          <AccordionSection title="2. Notification Settings">
             <View style={styles.switchGroup}>
               <Text style={styles.label}>Low Stock Alerts</Text>
               <Switch value={lowStock} onValueChange={setLowStock} trackColor={{true: '#ea7e30'}} />
@@ -297,8 +158,8 @@ const GeneralSettingScreen = ({navigation, route}: Props) => {
             </View>
           </AccordionSection>
 
-          {/* 9. Backup & Data */}
-          <AccordionSection title="9. Backup & Data">
+          {/* 3. Backup & Data */}
+          <AccordionSection title="3. Backup & Data">
             <TouchableOpacity style={styles.actionBtn}>
               <Text style={styles.actionBtnText}>Backup Data Now</Text>
             </TouchableOpacity>
@@ -310,8 +171,8 @@ const GeneralSettingScreen = ({navigation, route}: Props) => {
             </TouchableOpacity>
           </AccordionSection>
 
-          {/* 10. Security */}
-          <AccordionSection title="10. Security">
+          {/* 4. Security */}
+          <AccordionSection title="4. Security">
             <TouchableOpacity style={styles.actionBtn}>
               <Text style={styles.actionBtnText}>Change Password</Text>
             </TouchableOpacity>

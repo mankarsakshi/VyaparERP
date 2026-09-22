@@ -12,6 +12,7 @@ import {
   Platform,
 } from 'react-native';
 import {downloadCustomers} from '../utils/exportHelper';
+import {customerAPI} from '../api/customerService';
 
 type Props = {
   navigation: any;
@@ -258,9 +259,25 @@ const DEFAULT_CUSTOMERS: Customer[] = [
 ];
 
 const CustomerMasterScreen = ({navigation}: Props) => {
-  const [customers, setCustomers] =
-    useState<Customer[]>(DEFAULT_CUSTOMERS);
+  const [customers, setCustomers] = useState<Customer[]>([]);
+  const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+
+  const loadCustomers = async () => {
+    try {
+      setLoading(true);
+      const data = await customerAPI.getCustomers();
+      setCustomers(data);
+    } catch (error: any) {
+      Alert.alert('Error', error.message || 'Failed to load customers');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadCustomers();
+  }, []);
 
   const CUSTOMERS_PER_PAGE = 10;
   const [currentPage, setCurrentPage] = useState(1);
@@ -333,7 +350,7 @@ const CustomerMasterScreen = ({navigation}: Props) => {
     resetForm();
   };
 
-  const handleSaveCustomer = () => {
+  const handleSaveCustomer = async () => {
     if (!name.trim()) {
       Alert.alert('Validation Error', 'Customer Name is required');
       return;
@@ -369,28 +386,20 @@ const CustomerMasterScreen = ({navigation}: Props) => {
       ifscCode: ifscCode.trim().toUpperCase(),
     };
 
-    if (editingCustomerId) {
-      setCustomers(prev =>
-        prev.map(c =>
-          c.id === editingCustomerId ? customerData : c,
-        ),
-      );
-
-      Alert.alert(
-        'Success',
-        `Customer "${customerData.name}" updated successfully!`,
-      );
-    } else {
-      setCustomers(prev => [customerData, ...prev]);
-      setCurrentPage(1);
-
-      Alert.alert(
-        'Success',
-        `Customer "${customerData.name}" added successfully!`,
-      );
+    try {
+      if (editingCustomerId) {
+        await customerAPI.updateCustomer(customerData);
+        Alert.alert('Success', `Customer "${customerData.name}" updated successfully!`);
+      } else {
+        await customerAPI.createCustomer(customerData);
+        setCurrentPage(1);
+        Alert.alert('Success', `Customer "${customerData.name}" added successfully!`);
+      }
+      closeModal();
+      loadCustomers();
+    } catch (error: any) {
+      Alert.alert('Error', error.message || 'Failed to save customer');
     }
-
-    closeModal();
   };
 
   const handleDeleteCustomer = (customer: Customer) => {
@@ -405,10 +414,13 @@ const CustomerMasterScreen = ({navigation}: Props) => {
         {
           text: 'Delete',
           style: 'destructive',
-          onPress: () => {
-            setCustomers(prev =>
-              prev.filter(c => c.id !== customer.id),
-            );
+          onPress: async () => {
+            try {
+              await customerAPI.deleteCustomer(customer.id);
+              loadCustomers();
+            } catch (error: any) {
+              Alert.alert('Error', error.message || 'Failed to delete customer');
+            }
           },
         },
       ],
@@ -495,7 +507,7 @@ const CustomerMasterScreen = ({navigation}: Props) => {
       <View style={styles.content}>
         <View style={styles.searchRow}>
           <View style={styles.searchContainer}>
-            <Text style={styles.searchIcon}>🔍</Text>
+            <Text style={styles.searchIcon}></Text>
             <TextInput
               style={styles.searchInput}
               placeholder="Search customer name, phone or city..."
@@ -533,7 +545,7 @@ const CustomerMasterScreen = ({navigation}: Props) => {
           </Text>
         </View>
 
-        <View style={styles.sectionHeader}>
+        {/* <View style={styles.sectionHeader}>
           <View>
             <Text style={styles.sectionTitle}>
               Customer Directory
@@ -542,7 +554,7 @@ const CustomerMasterScreen = ({navigation}: Props) => {
               Total Customers: {customers.length}
             </Text>
           </View>
-        </View>
+        </View> */}
 
         <View style={styles.tableWrapper}>
           <ScrollView
@@ -1226,6 +1238,7 @@ const styles = StyleSheet.create({
   },
   headerTitleArea: {
     flex: 1,
+    marginTop: 12,
   },
   headerTitle: {
     fontSize: 20,

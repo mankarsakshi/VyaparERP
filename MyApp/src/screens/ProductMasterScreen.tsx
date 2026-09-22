@@ -14,6 +14,7 @@ import {
   ActivityIndicator,
   Dimensions,
 } from 'react-native';
+
 import {API_BASE_URL} from '../api/config';
 import {
   downloadProducts,
@@ -334,37 +335,60 @@ const ProductMasterScreen = ({navigation}: Props) => {
   const [gstRate, setGstRate] = useState('');
   const [openingStock, setOpeningStock] = useState('');
 
-  const [categories, setCategories] = useState<string[]>([
-    'Dairy',
-    'Snacks',
-    'Stationery',
-    'Beverages',
-    'Personal Care',
-    'Household',
-    'Chocolates',
-  ]);
+  const DEFAULT_CATEGORIES = [
+    'Electronics',
+    'Grocery',
+    'Apparel',
+    'Hardware',
+    'Pharmacy',
+    'FMCG',
+    'Other',
+  ];
+  const DEFAULT_UNITS = [
+    'Piece',
+    'Kg',
+    'Litre',
+    'Box',
+    'Meter',
+    'Gram',
+    'Pack',
+    'Dozen',
+  ];
+
+  const [categories, setCategories] = useState<string[]>(DEFAULT_CATEGORIES);
+  const [units, setUnits] = useState<string[]>(DEFAULT_UNITS);
+  const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
+  const [showUnitDropdown, setShowUnitDropdown] = useState(false);
 
   const loadCategories = async () => {
     try {
       const response = await fetchWithFallback('/api/categories');
       if (response && response.ok) {
         const result = await response.json();
-        const data = Array.isArray(result?.data)
-          ? result.data
-          : Array.isArray(result)
-          ? result
-          : [];
-
-        const dbCatNames: string[] = data
-          .map((c: any) => c.category_name || c.name)
-          .filter(Boolean);
-
+        const data = Array.isArray(result?.data) ? result.data : (Array.isArray(result) ? result : []);
+        const dbCatNames: string[] = data.map((c: any) => c.category_name || c.name).filter(Boolean);
         if (dbCatNames.length > 0) {
-          setCategories(Array.from(new Set([...categories, ...dbCatNames])));
+          setCategories(Array.from(new Set([...DEFAULT_CATEGORIES, ...dbCatNames])));
         }
       }
     } catch (err) {
       console.log('Error loading categories:', err);
+    }
+  };
+
+  const loadUnits = async () => {
+    try {
+      const response = await fetchWithFallback('/api/units');
+      if (response && response.ok) {
+        const result = await response.json();
+        const data = Array.isArray(result?.data) ? result.data : (Array.isArray(result) ? result : []);
+        const dbUnitNames: string[] = data.map((u: any) => u.unit_name || u.name).filter(Boolean);
+        if (dbUnitNames.length > 0) {
+          setUnits(Array.from(new Set([...DEFAULT_UNITS, ...dbUnitNames])));
+        }
+      }
+    } catch (err) {
+      console.log('Error loading units:', err);
     }
   };
 
@@ -445,6 +469,7 @@ const ProductMasterScreen = ({navigation}: Props) => {
   useEffect(() => {
     loadProducts();
     loadCategories();
+    loadUnits();
   }, []);
 
   const resetForm = () => {
@@ -1025,21 +1050,82 @@ const ProductMasterScreen = ({navigation}: Props) => {
               <View style={styles.twoColumnRow}>
                 <View style={styles.halfColumn}>
                   <Text style={styles.inputLabel}>Category</Text>
-                  <TextInput
-                    style={styles.formInput}
-                    placeholder="Category"
-                    value={category}
-                    onChangeText={setCategory}
-                  />
+                  <View style={styles.dropdownContainer}>
+                    <TouchableOpacity
+                      style={styles.selectBtn}
+                      onPress={() => {
+                        setShowCategoryDropdown(!showCategoryDropdown);
+                        setShowUnitDropdown(false);
+                      }}
+                      activeOpacity={0.8}>
+                      <Text style={[styles.selectBtnText, !category && styles.placeholderText]}>
+                        {category || 'Select category'}
+                      </Text>
+                      <Text style={styles.arrowIcon}>{showCategoryDropdown ? '▲' : '▼'}</Text>
+                    </TouchableOpacity>
+
+                    {showCategoryDropdown && (
+                      <View style={styles.dropdownMenu}>
+                        <ScrollView nestedScrollEnabled keyboardShouldPersistTaps="handled" style={{maxHeight: 150}}>
+                          {categories.length === 0 ? (
+                            <Text style={[styles.emptyText, {padding: 10}]}>No categories found</Text>
+                          ) : (
+                            categories.map((c) => (
+                              <TouchableOpacity
+                                key={c}
+                                style={styles.dropdownMenuItem}
+                                onPress={() => {
+                                  setCategory(c);
+                                  setShowCategoryDropdown(false);
+                                }}>
+                                <Text style={styles.dropdownMainText}>{c}</Text>
+                              </TouchableOpacity>
+                            ))
+                          )}
+                        </ScrollView>
+                      </View>
+                    )}
+                  </View>
                 </View>
+                
                 <View style={styles.halfColumn}>
                   <Text style={styles.inputLabel}>Unit</Text>
-                  <TextInput
-                    style={styles.formInput}
-                    placeholder="Piece / Kg"
-                    value={unit}
-                    onChangeText={setUnit}
-                  />
+                  <View style={styles.dropdownContainer}>
+                    <TouchableOpacity
+                      style={styles.selectBtn}
+                      onPress={() => {
+                        setShowUnitDropdown(!showUnitDropdown);
+                        setShowCategoryDropdown(false);
+                      }}
+                      activeOpacity={0.8}>
+                      <Text style={[styles.selectBtnText, !unit && styles.placeholderText]}>
+                        {unit || 'Select unit'}
+                      </Text>
+                      <Text style={styles.arrowIcon}>{showUnitDropdown ? '▲' : '▼'}</Text>
+                    </TouchableOpacity>
+
+                    {showUnitDropdown && (
+                      <View style={styles.dropdownMenu}>
+                        <ScrollView nestedScrollEnabled keyboardShouldPersistTaps="handled" style={{maxHeight: 150}}>
+                          {units.length === 0 ? (
+                            <Text style={[styles.emptyText, {padding: 10}]}>No units found</Text>
+                          ) : (
+                            units.map((u) => (
+                              <TouchableOpacity
+                                key={u}
+                                style={styles.dropdownMenuItem}
+                                onPress={() => {
+                                  setUnit(u);
+                                  setShowUnitDropdown(false);
+                                }}>
+                                <Text style={styles.dropdownMainText}>{u}</Text>
+                              </TouchableOpacity>
+                            ))
+                          )}
+                        </ScrollView>
+                      </View>
+                    )}
+                  </View>
                 </View>
               </View>
 
@@ -1657,6 +1743,63 @@ const styles = StyleSheet.create({
 
   halfColumn: {
     flex: 1,
+  },
+
+  dropdownContainer: {
+    position: 'relative',
+    zIndex: 9999,
+  },
+  selectBtn: {
+    height: 44,
+    backgroundColor: '#f8fafc',
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+    paddingHorizontal: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  selectBtnText: {
+    fontSize: 14,
+    color: '#1e293b',
+    flex: 1,
+  },
+  placeholderText: {
+    color: '#94a3b8',
+  },
+  arrowIcon: {
+    fontSize: 10,
+    color: '#64748b',
+  },
+  dropdownMenu: {
+    position: 'absolute',
+    top: 48,
+    left: 0,
+    right: 0,
+    backgroundColor: '#ffffff',
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 4},
+    shadowOpacity: 0.1,
+    shadowRadius: 6,
+    elevation: 8,
+    zIndex: 9999,
+    overflow: 'hidden',
+    maxHeight: 150,
+  },
+  dropdownMenuItem: {
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f1f5f9',
+  },
+  dropdownMainText: {
+    fontSize: 14,
+    color: '#1e293b',
+    fontWeight: '500',
   },
 
   formModalFooter: {

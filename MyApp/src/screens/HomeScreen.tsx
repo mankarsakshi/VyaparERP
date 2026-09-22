@@ -165,13 +165,13 @@ const PurchaseNavIcon = ({active}: {active: boolean}) => {
   );
 };
 
-const MoreNavIcon = ({active}: {active: boolean}) => {
+const ReportsNavIcon = ({active}: {active: boolean}) => {
   const color = active ? '#ea7e30' : '#64748b';
   return (
-    <View style={{width: 24, height: 19, justifyContent: 'space-between'}}>
-      <View style={{width: 24, height: 3, backgroundColor: color, borderRadius: 1.5}} />
-      <View style={{width: 24, height: 3, backgroundColor: color, borderRadius: 1.5}} />
-      <View style={{width: 24, height: 3, backgroundColor: color, borderRadius: 1.5}} />
+    <View style={{width: 22, height: 24, borderRadius: 4, borderWidth: 2, borderColor: color, padding: 3, justifyContent: 'space-around'}}>
+      <View style={{width: 11, height: 2.5, backgroundColor: color, borderRadius: 1.5}} />
+      <View style={{width: 8, height: 2.5, backgroundColor: color, borderRadius: 1.5}} />
+      <View style={{width: 10, height: 2.5, backgroundColor: color, borderRadius: 1.5}} />
     </View>
   );
 };
@@ -228,7 +228,7 @@ const HomeScreen = ({navigation, route}: Props) => {
           {/* Notification Bell */}
           <TouchableOpacity
             style={styles.headerBtn}
-            onPress={() => setIsMenuOpen(true)}
+            onPress={() => {}}
             activeOpacity={0.7}>
             <BellIcon />
           </TouchableOpacity>
@@ -385,10 +385,10 @@ const HomeScreen = ({navigation, route}: Props) => {
           <Text style={styles.navLabel}>Purchase</Text>
         </TouchableOpacity>
 
-        {/* More */}
-        <TouchableOpacity style={styles.navItem} onPress={() => setIsMenuOpen(true)}>
-          <MoreNavIcon active={false} />
-          <Text style={styles.navLabel}>More</Text>
+        {/* Reports */}
+        <TouchableOpacity style={styles.navItem} onPress={() => {}}>
+          <ReportsNavIcon active={false} />
+          <Text style={styles.navLabel}>Reports</Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>
@@ -425,10 +425,10 @@ const styles = StyleSheet.create({
     backgroundColor: '#ffffff',
     flexDirection: 'row',
     alignItems: 'center',
-    paddingTop: Platform.OS === 'android' ? 30 : 24,
-    paddingBottom: 22,
+    paddingTop: Platform.OS === 'android' ? 32 : 26,
+    paddingBottom: 12,
     paddingHorizontal: 16,
-    minHeight: 96,
+    minHeight: 70,
     borderBottomWidth: 1,
     borderBottomColor: '#f1f1f4',
     elevation: 2,
@@ -451,8 +451,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
   },
   headerLogo: {
-    width: 170,
-    height: 46,
+    width: 200,
+    height: 48,
   },
 
   // ---- SCROLL ----

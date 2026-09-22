@@ -62,6 +62,8 @@ const MENU_MODULES = [
       {title: 'Products Master', target: 'ProductMaster'},
       {title: 'Product Category Master', target: 'ProductCategoryMaster'},
       {title: 'Unit Master', target: 'UnitMaster'},
+      {title: 'Customer Master', target: 'CustomerMaster'},
+      {title: 'Supplier Master', target: 'SupplierMaster'},
       {title: 'Financial Year', target: 'FinancialYear'},
     ],
   },
@@ -93,13 +95,13 @@ const MENU_MODULES = [
   {
     id: 'sales',
     type: 'sales',
-    title: 'Sales',
+    title: 'Invoices',
     bg: '#fff7ed',
     color: '#ea7e30',
     subfields: [
-      {title: 'All Sales', target: 'AllSales'},
-      {title: 'Sale Details', target: 'SaleDetails'},
-      {title: 'Invoices', target: 'InvoiceDetails'},
+      {title: 'All Invoices', target: 'AllSales'},
+      {title: 'Add Invoice', target: 'AddSale'},
+      {title: 'Credit Note', target: 'CreditNote'},
     ],
   },
   {
@@ -113,6 +115,7 @@ const MENU_MODULES = [
       {title: 'Purchase Order History', target: 'PurchaseOrderHistory'},
       {title: 'Add Purchase', target: 'AddPurchase'},
       {title: 'All Purchases', target: 'AllPurchases'},
+      {title: 'Debit Note', target: 'DebitNote'},
     ],
   },
   {
@@ -160,6 +163,7 @@ const MENU_MODULES = [
     bg: '#f1f5f9',
     color: '#475569',
     subfields: [
+      {title: 'Add Company', target: 'AddCompany'},
       {title: 'General Setting', target: 'GeneralSetting'},
       {title: 'Theme Setting', target: 'ThemeSetting'},
       {title: 'Invoice Prefix Setting', target: 'InvoicePrefixSetting'},

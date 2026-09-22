@@ -122,6 +122,34 @@ const BackArrowIcon = () => (
   </View>
 );
 
+const EyeIcon = ({size = 14, color = '#6366f1'}: {size?: number; color?: string}) => (
+  <View style={{width: size, height: size, alignItems: 'center', justifyContent: 'center'}}>
+    <View
+      style={{
+        width: size * 0.8,
+        height: size * 0.8,
+        borderWidth: 1.5,
+        borderColor: color,
+        borderTopLeftRadius: size * 0.6,
+        borderBottomRightRadius: size * 0.6,
+        borderTopRightRadius: size * 0.1,
+        borderBottomLeftRadius: size * 0.1,
+        transform: [{rotate: '45deg'}],
+        alignItems: 'center',
+        justifyContent: 'center',
+      }}>
+      <View
+        style={{
+          width: size * 0.35,
+          height: size * 0.35,
+          borderRadius: size * 0.2,
+          backgroundColor: color,
+        }}
+      />
+    </View>
+  </View>
+);
+
 const PencilIcon = ({size = 14, color = '#ea7e30'}: {size?: number; color?: string}) => (
   <View style={{width: size, height: size, alignItems: 'center', justifyContent: 'center'}}>
     <View
@@ -435,6 +463,56 @@ const AllSalesScreen = ({navigation, route}: Props) => {
   };
 
   const getTotalAmount = (sale: SaleRecord) => {
+    // 1. Try to calculate from items precisely as the invoice modal does
+    const items = getSaleItems(sale);
+    if (items && items.length > 0) {
+      let calculatedTotal = 0;
+      const fallbackGstRate = Number(sale.gst_rate ?? sale.tax_rate ?? 18);
+      
+      items.forEach(item => {
+        const qty = Number(item.quantity ?? item.qty ?? 0);
+        const rate = Number(item.rate ?? item.sale_price ?? item.selling_price ?? 0);
+        const discPercent = Number(item.discount ?? item.discount_percent ?? 0);
+        
+        const rawGst = Number(item.gst ?? item.tax_rate ?? item.gst_percent ?? 0);
+        const gstPercent = rawGst > 0 ? rawGst : fallbackGstRate;
+        
+        const gross = qty * rate;
+        const discAmt = gross * (discPercent / 100);
+        const taxable = gross - discAmt;
+        const taxAmt = taxable * (gstPercent / 100);
+        calculatedTotal += (taxable + taxAmt);
+      });
+      
+      if (calculatedTotal > 0) {
+        // Add any additional invoice-level charges if they exist in the backend
+        const freight = Number((sale as any).freight_charges || 0);
+        const roundOff = Number((sale as any).round_off || 0);
+        // Note: Invoice level discount is subtracted from total, but items already have discount.
+        // If there's an invoice level discount, subtract it.
+        const invoiceDiscount = Number((sale as any).discount || 0);
+        // In this app, item-level discounts and invoice-level discounts might be mixed, 
+        // but the modal usually calculates from items.
+        return calculatedTotal + freight + roundOff - invoiceDiscount;
+      }
+    }
+
+    // 2. Fallback to header-level fields
+    const subtotal = Number(sale.subtotal || 0);
+    const discount = Number(sale.discount || 0);
+    const taxAmount = Number(sale.tax_amount || sale.gst_amount || 0);
+    
+    if (subtotal > 0 || taxAmount > 0) {
+      const freight = Number((sale as any).freight_charges || 0);
+      const roundOff = Number((sale as any).round_off || 0);
+      const calculatedTotal = (subtotal - discount) + taxAmount + freight + roundOff;
+      
+      if (calculatedTotal > 0) {
+        return calculatedTotal;
+      }
+    }
+
+    // 3. Ultimate fallback to raw total_amount field
     return Number(
       sale.total_amount ??
         sale.GrandTotal ??
@@ -455,6 +533,7 @@ const AllSalesScreen = ({navigation, route}: Props) => {
     const saleId = getSaleId(sale);
     navigation.navigate('AddSale', {
       mode: 'edit',
+      showBill: true,
       saleId,
       sale,
       user,
@@ -584,7 +663,7 @@ const AllSalesScreen = ({navigation, route}: Props) => {
         </TouchableOpacity>
 
         <View style={styles.headerTitleArea}>
-          <Text style={styles.headerTitle}>All Sales</Text>
+          <Text style={styles.headerTitle}>All Invoices</Text>
         </View>
       </View>
 
@@ -754,7 +833,7 @@ const AllSalesScreen = ({navigation, route}: Props) => {
                       style={styles.actionBtn}
                       onPress={() => openViewSale(item)}
                       hitSlop={{top: 8, bottom: 8, left: 8, right: 8}}>
-                      <Text style={styles.viewActionIcon}>👁️</Text>
+                      <EyeIcon size={14} color="#6366f1" />
                     </TouchableOpacity>
 
                     <TouchableOpacity

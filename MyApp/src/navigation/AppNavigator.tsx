@@ -26,12 +26,16 @@ import AddSaleScreen from '../screens/AddSaleScreen';
 import AllSalesScreen from '../screens/AllSales';
 import BusinessProfileScreen from '../screens/BusinessProfileScreen';
 import MenuScreen from '../screens/MenuScreen';
+import AddExpenseScreen from '../screens/AddExpenseScreen';
+import AllExpensesScreen from '../screens/AllExpensesScreen';
+
 
 // Settings
 import AccountSettingsScreen from '../screens/AccountSettingsScreen';
 import BusinessSettingsScreen from '../screens/BusinessSettingsScreen';
 import GeneralSettingScreen from '../screens/GeneralSettingScreen';
 import ThemeSettingScreen from '../screens/ThemeSettingScreen';
+import AddCompanyScreen from '../screens/AddCompanyScreen';
 
 // Product Masters
 //import ProductCategoryMasterScreen from '../screens/ProductCategoryMasterScreen';
@@ -54,6 +58,7 @@ import ViewPurchaseScreen from '../screens/ViewPurchase';
 import ViewPurchaseOrderScreen from '../screens/ViewPurchaseOrder';
 import ProductCategoryMasterScreen from '../screens/ProductCategoryMasterScreen';
 import FinancialYearMaster from '../screens/FinancialYearMaster';
+import CreditNoteScreen from '../screens/CreditNoteScreen';
 import { Screen } from 'react-native-screens';
 
 const Stack =
@@ -152,6 +157,11 @@ const AppNavigator = () => {
         />
 
         <Stack.Screen
+          name="CreditNote"
+          component={CreditNoteScreen}
+        />
+
+        <Stack.Screen
           name="SaleDetails"
           component={AddSaleScreen}
         />
@@ -186,6 +196,11 @@ const AppNavigator = () => {
         />
 
         <Stack.Screen
+          name="AddCompany"
+          component={AddCompanyScreen}
+        />
+
+        <Stack.Screen
           name="InvoicePrefixSetting"
           component={GeneralSettingScreen}
         />
@@ -207,6 +222,20 @@ const AppNavigator = () => {
             animation: 'none',
             contentStyle: {backgroundColor: 'transparent'},
           }}
+        />
+
+        {/* ===================================== */}
+        {/* EXPENSES */}
+        {/* ===================================== */}
+
+        <Stack.Screen
+          name="AddExpense"
+          component={AddExpenseScreen}
+        />
+
+        <Stack.Screen
+          name="AllExpenses"
+          component={AllExpensesScreen}
         />
 
         {/* ===================================== */}

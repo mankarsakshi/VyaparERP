@@ -98,6 +98,35 @@ const BackArrowIcon = () => (
   </View>
 );
 
+const EyeIcon = ({size = 14, color = '#6366f1'}: {size?: number; color?: string}) => (
+  <View style={{width: size, height: size, alignItems: 'center', justifyContent: 'center'}}>
+    <View
+      style={{
+        width: size * 0.8,
+        height: size * 0.8,
+        borderWidth: 1.5,
+        borderColor: color,
+        borderTopLeftRadius: size * 0.6,
+        borderBottomRightRadius: size * 0.6,
+        borderTopRightRadius: size * 0.1,
+        borderBottomLeftRadius: size * 0.1,
+        transform: [{rotate: '45deg'}],
+        alignItems: 'center',
+        justifyContent: 'center',
+      }}>
+      <View
+        style={{
+          width: size * 0.35,
+          height: size * 0.35,
+          borderRadius: size * 0.2,
+          backgroundColor: color,
+        }}
+      />
+    </View>
+  </View>
+);
+
+
 const PencilIcon = ({size = 14, color = '#ea7e30'}: {size?: number; color?: string}) => (
   <View style={{width: size, height: size, alignItems: 'center', justifyContent: 'center'}}>
     <View
@@ -639,7 +668,7 @@ const AllPurchasesScreen = ({navigation, route}: Props) => {
                       style={styles.actionBtn}
                       onPress={() => openPurchase(item)}
                       hitSlop={{top: 8, bottom: 8, left: 8, right: 8}}>
-                      <Text style={styles.viewActionIcon}>👁️</Text>
+                      <EyeIcon size={14} color="#6366f1" />
                     </TouchableOpacity>
 
                     <TouchableOpacity
@@ -793,6 +822,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 14,
+    marginTop: 4,
     borderWidth: 1.5,
     borderColor: '#e2e8f0',
     shadowColor: '#000',

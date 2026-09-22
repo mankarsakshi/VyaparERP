@@ -1,0 +1,658 @@
+return (
+      <View style={styles.loadingScreen}>
+        <ActivityIndicator size="large" color="#ea7e30" />
+        <Text style={styles.loadingText}>Loading purchase order...</Text>
+      </View>
+    );
+  }
+
+  return (
+    <SafeAreaView style={styles.container}>
+      {/* ================================================= */}
+      {/* 1. FIXED HEADER                                   */}
+      {/* ================================================= */}
+      <View style={styles.header}>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => navigation.goBack()}
+          activeOpacity={0.7}
+          hitSlop={{top: 12, bottom: 12, left: 12, right: 12}}>
+          <BackArrowIcon />
+        </TouchableOpacity>
+
+        <View style={styles.headerTitleArea}>
+          <Text style={styles.headerTitle}>
+            {isEditing ? 'Edit Purchase Order' : 'Create Purchase Order'}
+          </Text>
+        </View>
+      </View>
+
+      {/* ================================================= */}
+      {/* 2. SCROLLABLE FORM BODY                           */}
+      {/* ================================================= */}
+      <ScrollView
+        style={styles.scrollContent}
+        contentContainerStyle={styles.scrollContentContainer}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled">
+
+        {/* ----------------- ORDER DETAILS CARD ----------------- */}
+        <View style={styles.formCard}>
+          <Text style={styles.cardHeaderTitle}>Order Details</Text>
+
+          <View style={styles.inputRow}>
+            <View style={styles.halfInputCol}>
+              <Text style={styles.fieldLabel}>PO Number *</Text>
+              <TextInput
+                style={styles.textInput}
+                value={PONumber}
+                onChangeText={setPONumber}
+                placeholder="e.g. PO-1001"
+                placeholderTextColor="#94a3b8"
+              />
+            </View>
+
+            <View style={styles.halfInputCol}>
+              <Text style={styles.fieldLabel}>PO Date *</Text>
+              <TouchableOpacity
+                style={styles.datePickerBtn}
+                onPress={() => setShowPODatePicker(true)}
+                activeOpacity={0.8}>
+                <Text style={styles.datePickerText}>{PODate || 'Select Date'}</Text>
+                <Text style={styles.calendarIcon}>📅</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+
+        </View>
+
+        {showPODatePicker && (
+          <DateTimePicker
+            value={selectedPODate}
+            mode="date"
+            display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+            onChange={(event, date) => {
+              setShowPODatePicker(false);
+              if (date) {
+                setSelectedPODate(date);
+                setPODate(formatDate(date));
+              }
+            }}
+          />
+        )}
+
+        {showDeliveryDatePicker && (
+          <DateTimePicker
+            value={selectedDeliveryDate}
+            mode="date"
+            display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+            onChange={(event, date) => {
+              setShowDeliveryDatePicker(false);
+              if (date) {
+                setSelectedDeliveryDate(date);
+                setDeliveryDate(formatDate(date));
+              }
+            }}
+          />
+        )}
+
+        {/* ----------------- SUPPLIER CARD ----------------- */}
+        <View style={styles.formCard}>
+          <Text style={styles.cardHeaderTitle}>Supplier Information</Text>
+
+          <Text style={styles.fieldLabel}>Supplier Name *</Text>
+          <View style={styles.dropdownContainer}>
+            <TextInput
+              style={styles.textInput}
+              placeholder="Search or enter supplier name..."
+              placeholderTextColor="#94a3b8"
+              value={Supplier}
+              onFocus={() => setShowSupplierDropdown(true)}
+              onChangeText={text => {
+                setSupplier(text);
+                if (!text.trim()) {
+                  setSupplierId(null);
+                  setSupplierPhone('');
+                  setSupplierEmail('');
+                  setSupplierGSTIN('');
+                  setSupplierAddress('');
+                }
+                setShowSupplierDropdown(true);
+              }}
+            />
+
+            {showSupplierDropdown && (
+              <View style={styles.dropdownMenu}>
+                <ScrollView
+                  nestedScrollEnabled
+                  keyboardShouldPersistTaps="handled"
+                  style={{maxHeight: 180}}>
+                  {suppliers
+                    .filter(item => {
+                      const q = Supplier.toLowerCase().trim();
+                      if (!q) return true;
+                      return (
+                        item.name.toLowerCase().includes(q) ||
+                        (item.phone && item.phone.includes(q)) ||
+                        (item.email && item.email.toLowerCase().includes(q))
+                      );
+                    })
+                    .map(item => (
+                      <TouchableOpacity
+                        key={`supp-${item.id}`}
+                        style={styles.dropdownMenuItem}
+                        onPress={() => handleSupplierSelect(item)}>
+                        <Text style={styles.dropdownMainText}>{item.name}</Text>
+                        {item.phone ? (
+                          <Text style={styles.dropdownSubText}>
+                            {item.phone}
+                            {item.city ? ` • ${item.city}` : ''}
+                          </Text>
+                        ) : null}
+                      </TouchableOpacity>
+                    ))}
+                  <TouchableOpacity
+                    style={[styles.dropdownMenuItem, styles.addSupplierRow]}
+                    onPress={() => {
+                      setShowSupplierDropdown(false);
+                      navigation.navigate('SupplierMaster', {
+                        openAddModal: true,
+                        returnTo: 'PurchaseOrder',
+                      });
+                    }}>
+                    <Text style={styles.addSupplierText}>+ Add New Supplier</Text>
+                  </TouchableOpacity>
+                </ScrollView>
+              </View>
+            )}
+          </View>
+
+          <View style={[styles.inputRow, {marginTop: 12}]}>
+            <View style={styles.halfInputCol}>
+              <Text style={styles.fieldLabel}>Phone Number</Text>
+              <TextInput
+                style={styles.textInput}
+                value={supplierPhone}
+                onChangeText={setSupplierPhone}
+                placeholder="Phone number"
+                placeholderTextColor="#94a3b8"
+                keyboardType="phone-pad"
+              />
+            </View>
+
+            <View style={styles.halfInputCol}>
+              <Text style={styles.fieldLabel}>Email Address</Text>
+              <TextInput
+                style={styles.textInput}
+                value={supplierEmail}
+                onChangeText={setSupplierEmail}
+                placeholder="Email address"
+                placeholderTextColor="#94a3b8"
+                keyboardType="email-address"
+                autoCapitalize="none"
+              />
+            </View>
+          </View>
+
+          <Text style={[styles.fieldLabel, {marginTop: 12}]}>GSTIN / Tax ID</Text>
+          <TextInput
+            style={styles.textInput}
+            value={supplierGSTIN}
+            onChangeText={setSupplierGSTIN}
+            placeholder="Enter GSTIN / Tax ID"
+            placeholderTextColor="#94a3b8"
+            autoCapitalize="characters"
+          />
+
+          <Text style={[styles.fieldLabel, {marginTop: 12}]}>Supplier Address</Text>
+          <TextInput
+            style={styles.textAreaInput}
+            value={supplierAddress}
+            onChangeText={setSupplierAddress}
+            placeholder="Enter supplier address"
+            placeholderTextColor="#94a3b8"
+            multiline
+            numberOfLines={2}
+            textAlignVertical="top"
+          />
+        </View>
+
+        {/* ----------------- PRODUCT TABLE CARD ----------------- */}
+        <View style={styles.formCard}>
+          <View style={styles.sectionHeaderRow}>
+            <View style={styles.sectionTitleWithBadge}>
+              <Text style={styles.cardHeaderTitle}>Product Items</Text>
+              <View style={styles.itemBadge}>
+                <Text style={styles.itemBadgeText}>
+                  {filledItemsCount} {filledItemsCount === 1 ? 'Item' : 'Items'}
+                </Text>
+              </View>
+            </View>
+
+            <TouchableOpacity
+              style={styles.addItemBtn}
+              onPress={openAddModal}
+              activeOpacity={0.8}>
+              <Text style={styles.addItemBtnText}>+ Add Item</Text>
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.swipeHintRow}>
+            <Text style={styles.swipeHintArrow}>➔</Text>
+            <Text style={styles.swipeHintText}>Tap any row to edit</Text>
+          </View>
+
+          <View style={styles.tableCardWrapper}>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              nestedScrollEnabled>
+              <View>
+                {/* TABLE HEADER */}
+                <View style={styles.tableHeaderRow}>
+                  <View style={styles.colProduct}>
+                    <Text style={styles.thText}>PRODUCT</Text>
+                  </View>
+                  <View style={styles.colQty}>
+                    <Text style={[styles.thText, styles.textCenter]}>QTY</Text>
+                  </View>
+                  <View style={styles.colRate}>
+                    <Text style={[styles.thText, styles.textRight]}>RATE (₹)</Text>
+                  </View>
+                  <View style={styles.colDiscount}>
+                    <Text style={[styles.thText, styles.textCenter]}>DISC %</Text>
+                  </View>
+                  <View style={styles.colHsn}>
+                    <Text style={[styles.thText, styles.textCenter]}>HSN</Text>
+                  </View>
+                  <View style={styles.colGst}>
+                    <Text style={[styles.thText, styles.textCenter]}>GST %</Text>
+                  </View>
+                  <View style={styles.colTotal}>
+                    <Text style={[styles.thText, styles.textRight]}>TOTAL (₹)</Text>
+                  </View>
+                  <View style={styles.colAction}>
+                    <Text style={[styles.thText, styles.textCenter]}>ACTION</Text>
+                  </View>
+                </View>
+
+                {/* TABLE ROWS */}
+                {items.map((item, index) => {
+                  const isBlank = isItemBlank(item);
+                  const lineTotal = calculateItemTotal(item);
+                  const isEven = index % 2 === 0;
+
+                  return (
+                    <TouchableOpacity
+                      key={item.id ? `db-${item.id}` : `item-${index}`}
+                      activeOpacity={0.7}
+                      onPress={() => openEditModal(index)}
+                      style={[
+                        styles.tableDataRow,
+                        isEven ? styles.rowEven : styles.rowOdd,
+                        isBlank && styles.blankRow,
+                        index === items.length - 1 && styles.lastRow,
+                      ]}>
+                      {/* Product */}
+                      <View style={styles.colProduct}>
+                        {isBlank ? (
+                          <Text style={styles.cellPlaceholderText}>
+                            + Select Product...
+                          </Text>
+                        ) : (
+                          <Text style={styles.cellProductText} numberOfLines={1}>
+                            {item.product}
+                          </Text>
+                        )}
+                      </View>
+
+                      {/* Qty */}
+                      <View style={styles.colQty}>
+                        <Text style={[styles.cellCenterText, isBlank && styles.cellMuted]}>
+                          {isBlank ? '—' : item.quantity || '0'}
+                        </Text>
+                      </View>
+
+                      {/* Rate */}
+                      <View style={styles.colRate}>
+                        <Text style={[styles.cellRightText, isBlank && styles.cellMuted]}>
+                          {isBlank ? '—' : Number(item.rate || 0).toFixed(2)}
+                        </Text>
+                      </View>
+
+                      {/* Discount */}
+                      <View style={styles.colDiscount}>
+                        <Text style={[styles.cellCenterText, isBlank && styles.cellMuted]}>
+                          {isBlank
+                            ? '—'
+                            : item.discount && Number(item.discount) > 0
+                            ? `${item.discount}%`
+                            : '0%'}
+                        </Text>
+                      </View>
+
+                      {/* HSN */}
+                      <View style={styles.colHsn}>
+                        <Text style={[styles.cellCenterText, isBlank && styles.cellMuted]}>
+                          {isBlank ? '—' : item.hsn || '-'}
+                        </Text>
+                      </View>
+
+                      {/* GST % */}
+                      <View style={styles.colGst}>
+                        <Text style={[styles.cellCenterText, isBlank && styles.cellMuted]}>
+                          {isBlank ? '—' : `${item.taxRate || '0'}%`}
+                        </Text>
+                      </View>
+
+                      {/* Total */}
+                      <View style={styles.colTotal}>
+                        <Text style={[styles.cellTotalText, isBlank && styles.cellMuted]}>
+                          {isBlank ? '—' : `₹${lineTotal.toFixed(2)}`}
+                        </Text>
+                      </View>
+
+                      {/* ACTIONS */}
+                      <View style={styles.colAction}>
+                        <View style={styles.actionButtonsRow}>
+                          <TouchableOpacity
+                            onPress={() => openEditModal(index)}
+                            style={styles.actionIconBtn}
+                            activeOpacity={0.7}
+                            hitSlop={{top: 8, bottom: 8, left: 8, right: 8}}>
+                            <PencilIcon size={14} color="#ea7e30" />
+                          </TouchableOpacity>
+                          {(!isBlank || items.length > 1) ? (
+                            <TouchableOpacity
+                              onPress={() => handleDeleteItem(index)}
+                              style={styles.actionIconBtn}
+                              activeOpacity={0.7}
+                              hitSlop={{top: 8, bottom: 8, left: 8, right: 8}}>
+                              <DustbinIcon size={14} color="#ef4444" />
+                            </TouchableOpacity>
+                          ) : null}
+                        </View>
+                      </View>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+            </ScrollView>
+          </View>
+        </View>
+
+        {/* ----------------- ORDER SUMMARY CARD ----------------- */}
+        <View style={styles.summaryCard}>
+          <Text style={styles.summaryTitle}>Order Summary</Text>
+
+          <View style={styles.summaryRow}>
+            <Text style={styles.summaryLabel}>Subtotal</Text>
+            <Text style={styles.summaryValue}>₹{calculateSubtotal().toFixed(2)}</Text>
+          </View>
+
+          <View style={styles.summaryRow}>
+            <Text style={styles.summaryLabel}>Discount</Text>
+            <Text style={styles.discountValue}>- ₹{calculateTotalDiscount().toFixed(2)}</Text>
+          </View>
+
+          <View style={styles.summaryRow}>
+            <Text style={styles.summaryLabel}>Taxable Amount</Text>
+            <Text style={styles.summaryValue}>₹{calculateTaxableAmount().toFixed(2)}</Text>
+          </View>
+
+          <View style={styles.summaryRow}>
+            <Text style={styles.summaryLabel}>GST Amount</Text>
+            <Text style={styles.summaryValue}>₹{calculateGST().toFixed(2)}</Text>
+          </View>
+
+          <View style={styles.summaryDivider} />
+
+          <View style={styles.summaryRow}>
+            <Text style={styles.grandTotalLabel}>Grand Total</Text>
+            <Text style={styles.grandTotalValue}>₹{calculateGrandTotal().toFixed(2)}</Text>
+          </View>
+        </View>
+
+        {/* ----------------- ATTACHMENT CARD ----------------- */}
+        <View style={styles.formCard}>
+          <Text style={styles.cardHeaderTitle}>Upload Order Document</Text>
+
+          <TouchableOpacity
+            style={styles.uploadBox}
+            onPress={selectDocument}
+            activeOpacity={0.7}>
+            <Text style={styles.uploadIcon}>📎</Text>
+            <Text style={styles.uploadBoxText}>Attach PDF or Word Document</Text>
+            <Text style={styles.uploadSubText}>Max 10MB (PDF, DOC, DOCX)</Text>
+          </TouchableOpacity>
+
+          {selectedFile && (
+            <View style={styles.attachedFileBox}>
+              <View style={styles.attachedFileInfo}>
+                <Text style={styles.attachedFileIcon}>📄</Text>
+                <Text style={styles.attachedFileName} numberOfLines={1}>
+                  {selectedFile.name}
+                </Text>
+              </View>
+              <TouchableOpacity
+                onPress={() => setSelectedFile(null)}
+                style={styles.removeFileBtn}>
+                <Text style={styles.removeFileText}>✕ Remove</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+        </View>
+
+        {/* ----------------- SUBMIT BUTTON ----------------- */}
+        <TouchableOpacity
+          style={[styles.saveButton, saving && {opacity: 0.7}]}
+          onPress={handleSave}
+          disabled={saving}
+          activeOpacity={0.85}>
+          {saving ? (
+            <ActivityIndicator color="#ffffff" />
+          ) : (
+            <Text style={styles.saveButtonText}>
+              {isEditing ? 'Update Purchase Order' : 'Save Purchase Order'}
+            </Text>
+          )}
+        </TouchableOpacity>
+
+        <View style={{height: 40}} />
+      </ScrollView>
+
+      {/* ================================================= */}
+      {/* 3. ADD / EDIT PRODUCT MODAL POPUP                 */}
+      {/* ================================================= */}
+      <Modal
+        visible={modalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setModalVisible(false)}>
+        <View style={styles.modalOverlay}>
+          <KeyboardAvoidingView
+            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+            style={styles.modalContainer}>
+            <View style={styles.modalContent}>
+              {/* MODAL HEADER */}
+              <View style={styles.modalHeader}>
+                <Text style={styles.modalTitle}>
+                  {editingIndex !== null && !isItemBlank(items[editingIndex] || createEmptyItem())
+                    ? 'Edit Product Item'
+                    : 'Add Product Item'}
+                </Text>
+                <TouchableOpacity
+                  onPress={() => setModalVisible(false)}
+                  style={styles.modalCloseBtn}
+                  hitSlop={{top: 10, bottom: 10, left: 10, right: 10}}>
+                  <Text style={styles.modalCloseText}>✕</Text>
+                </TouchableOpacity>
+              </View>
+
+              <ScrollView
+                showsVerticalScrollIndicator={false}
+                keyboardShouldPersistTaps="handled"
+                style={styles.modalScrollBody}>
+                {/* PRODUCT NAME INPUT + CATALOG DROPDOWN */}
+                <Text style={styles.modalFieldLabel}>Product Name *</Text>
+                <View style={styles.modalDropdownContainer}>
+                  <TextInput
+                    style={styles.modalInput}
+                    placeholder="Search or enter product name"
+                    placeholderTextColor="#94a3b8"
+                    value={modalProduct}
+                    onFocus={() => setModalProductDropdownOpen(true)}
+                    onChangeText={text => {
+                      setModalProduct(text);
+                      setModalProductId(null);
+                      setModalProductDropdownOpen(true);
+                    }}
+                  />
+
+                  {modalProductDropdownOpen && (
+                    <View style={styles.modalDropdown}>
+                      <ScrollView
+                        nestedScrollEnabled
+                        keyboardShouldPersistTaps="handled">
+                        {filteredModalProducts.length > 0 ? (
+                          filteredModalProducts.map(catalogItem => (
+                            <TouchableOpacity
+                              key={catalogItem.id}
+                              style={styles.modalDropdownItem}
+                              onPress={() =>
+                                handleSelectModalProduct(catalogItem)
+                              }>
+                              <Text style={styles.modalDropdownText}>
+                                {catalogItem.name}
+                              </Text>
+                              <Text style={styles.modalDropdownSub}>
+                                HSN: {catalogItem.hsn} | Rate: ₹
+                                {catalogItem.rate || 0}
+                              </Text>
+                            </TouchableOpacity>
+                          ))
+                        ) : (
+                          <View style={styles.modalDropdownEmpty}>
+                            <Text style={styles.modalDropdownEmptyText}>
+                              Custom: "{modalProduct}"
+                            </Text>
+                          </View>
+                        )}
+                      </ScrollView>
+                    </View>
+                  )}
+                </View>
+
+                {/* QUANTITY & RATE ROW */}
+                <View style={styles.modalRow}>
+                  <View style={styles.modalHalf}>
+                    <Text style={styles.modalFieldLabel}>Quantity *</Text>
+                    <TextInput
+                      style={styles.modalInput}
+                      value={modalQuantity}
+                      onChangeText={setModalQuantity}
+                      placeholder="e.g. 2"
+                      placeholderTextColor="#94a3b8"
+                      keyboardType="decimal-pad"
+                    />
+                  </View>
+
+                  <View style={styles.modalHalf}>
+                    <Text style={styles.modalFieldLabel}>Rate (₹) *</Text>
+                    <TextInput
+                      style={styles.modalInput}
+                      value={modalRate}
+                      onChangeText={setModalRate}
+                      placeholder="e.g. 500"
+                      placeholderTextColor="#94a3b8"
+                      keyboardType="decimal-pad"
+                    />
+                  </View>
+                </View>
+
+                {/* DISCOUNT, HSN & GST ROW */}
+                <View style={styles.modalRow}>
+                  <View style={styles.modalThird}>
+                    <Text style={styles.modalFieldLabel}>Discount (%)</Text>
+                    <TextInput
+                      style={styles.modalInput}
+                      value={modalDiscount}
+                      onChangeText={setModalDiscount}
+                      placeholder="0"
+                      placeholderTextColor="#94a3b8"
+                      keyboardType="decimal-pad"
+                    />
+                  </View>
+
+                  <View style={styles.modalThird}>
+                    <Text style={styles.modalFieldLabel}>HSN Code</Text>
+                    <TextInput
+                      style={styles.modalInput}
+                      value={modalHsn}
+                      onChangeText={setModalHsn}
+                      placeholder="8471"
+                      placeholderTextColor="#94a3b8"
+                    />
+                  </View>
+
+                  <View style={styles.modalThird}>
+                    <Text style={styles.modalFieldLabel}>GST (%)</Text>
+                    <TextInput
+                      style={styles.modalInput}
+                      value={modalTaxRate}
+                      onChangeText={setModalTaxRate}
+                      placeholder="0"
+                      placeholderTextColor="#94a3b8"
+                      keyboardType="decimal-pad"
+                    />
+                  </View>
+                </View>
+
+                {/* CALCULATION SUMMARY PREVIEW */}
+                <View style={styles.modalCalcCard}>
+                  <View style={styles.modalCalcRow}>
+                    <Text style={styles.modalCalcLabel}>Subtotal:</Text>
+                    <Text style={styles.modalCalcVal}>
+                      ₹{modalSubtotalNum.toFixed(2)}
+                    </Text>
+                  </View>
+                  <View style={styles.modalCalcRow}>
+                    <Text style={styles.modalCalcLabel}>
+                      Discount ({modalDiscount || 0}%):
+                    </Text>
+                    <Text style={styles.modalCalcDiscount}>
+                      - ₹{modalDiscountAmtNum.toFixed(2)}
+                    </Text>
+                  </View>
+                  <View style={styles.modalCalcRow}>
+                    <Text style={styles.modalCalcLabel}>GST ({modalTaxRate || 0}%):</Text>
+                    <Text style={styles.modalCalcVal}>₹{modalGSTNum.toFixed(2)}</Text>
+                  </View>
+                  <View style={[styles.modalCalcRow, styles.modalCalcTotalRow]}>
+                    <Text style={styles.modalCalcTotalLabel}>Item Total:</Text>
+                    <Text style={styles.modalCalcTotalVal}>₹{modalGrandTotalNum.toFixed(2)}</Text>
+                  </View>
+                </View>
+
+                {/* ACTION BUTTONS */}
+                <View style={styles.modalActionRow}>
+                  <TouchableOpacity
+                    style={styles.modalCancelBtn}
+                    onPress={() => setModalVisible(false)}
+                    activeOpacity={0.7}>
+                    <Text style={styles.modalCancelBtnText}>Cancel</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={styles.modalSaveBtn}
+                    onPress={handleSaveModalItem}
+                    activeOpacity={0.85}>
+                    <Text style={styles.modalSaveBtnText}>Save Item</Text>
+                  </TouchableOpacity>
+                </View>
+              </ScrollView>
+            </View>
+          </KeyboardAvoidingView>
+        </View>
+      </Modal>
+    </SafeAreaView>

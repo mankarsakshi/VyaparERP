@@ -12,6 +12,7 @@ import {
   Platform,
 } from 'react-native';
 import {downloadSuppliers} from '../utils/exportHelper';
+import {supplierAPI} from '../api/supplierService';
 
 type Props = {
   navigation: any;
@@ -324,8 +325,24 @@ const DEFAULT_SUPPLIERS: Supplier[] = [
 ];
 
 const SupplierMasterScreen = ({navigation, route}: Props) => {
-  const [suppliers, setSuppliers] =
-    useState<Supplier[]>(DEFAULT_SUPPLIERS);
+  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  const loadSuppliers = async () => {
+    try {
+      setLoading(true);
+      const data = await supplierAPI.getSuppliers();
+      setSuppliers(data);
+    } catch (error: any) {
+      Alert.alert('Error', error.message || 'Failed to load suppliers');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadSuppliers();
+  }, []);
 
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -399,7 +416,7 @@ const SupplierMasterScreen = ({navigation, route}: Props) => {
     resetForm();
   };
 
-  const handleSaveSupplier = () => {
+  const handleSaveSupplier = async () => {
     if (!name.trim()) {
       Alert.alert('Validation Error', 'Supplier Name is required');
       return;
@@ -418,7 +435,7 @@ const SupplierMasterScreen = ({navigation, route}: Props) => {
       return;
     }
 
-    const supplierData: Supplier = {
+    const supplierData: any = {
       id: editingSupplierId || Date.now().toString(),
       name: name.trim(),
       phone: phone.trim(),
@@ -432,38 +449,33 @@ const SupplierMasterScreen = ({navigation, route}: Props) => {
       openingBalance: parseFloat(openingBalance) || 0,
     };
 
-    if (editingSupplierId) {
-      setSuppliers(prev =>
-        prev.map(s =>
-          s.id === editingSupplierId ? supplierData : s,
-        ),
-      );
-
-      Alert.alert(
-        'Success',
-        `Supplier "${supplierData.name}" updated successfully!`,
-      );
-    } else {
-      setSuppliers(prev => [supplierData, ...prev]);
-      setCurrentPage(1);
-
-      Alert.alert(
-        'Success',
-        `Supplier "${supplierData.name}" added successfully!`,
-      );
-
-      if (route?.params?.returnTo) {
-        closeModal();
-
-        navigation.navigate(route.params.returnTo, {
-          newSupplier: supplierData,
-        });
-
-        return;
+    try {
+      let savedSupplier = supplierData;
+      
+      if (editingSupplierId) {
+        await supplierAPI.updateSupplier(supplierData);
+        Alert.alert('Success', `Supplier "${supplierData.name}" updated successfully!`);
+      } else {
+        const responseData = await supplierAPI.createSupplier(supplierData);
+        // Optional: update id if backend returns it
+        if (responseData && responseData.data && responseData.data.id) {
+            savedSupplier = { ...supplierData, id: String(responseData.data.id) };
+        }
+        setCurrentPage(1);
+        Alert.alert('Success', `Supplier "${supplierData.name}" added successfully!`);
       }
-    }
 
-    closeModal();
+      closeModal();
+      loadSuppliers();
+
+      if (!editingSupplierId && route?.params?.returnTo) {
+        navigation.navigate(route.params.returnTo, {
+          newSupplier: savedSupplier,
+        });
+      }
+    } catch (error: any) {
+      Alert.alert('Error', error.message || 'Failed to save supplier');
+    }
   };
 
   const handleDeleteSupplier = (supplier: Supplier) => {
@@ -478,10 +490,13 @@ const SupplierMasterScreen = ({navigation, route}: Props) => {
         {
           text: 'Delete',
           style: 'destructive',
-          onPress: () => {
-            setSuppliers(prev =>
-              prev.filter(s => s.id !== supplier.id),
-            );
+          onPress: async () => {
+            try {
+              await supplierAPI.deleteSupplier(supplier.id);
+              loadSuppliers();
+            } catch (error: any) {
+              Alert.alert('Error', error.message || 'Failed to delete supplier');
+            }
           },
         },
       ],
@@ -1280,6 +1295,7 @@ const styles = StyleSheet.create({
   },
   headerTitleArea: {
     flex: 1,
+    marginTop: 12,
   },
   headerTitle: {
     fontSize: 20,

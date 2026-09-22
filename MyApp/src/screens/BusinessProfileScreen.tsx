@@ -465,6 +465,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 14,
+    marginTop: 4,
     borderWidth: 1.5,
     borderColor: '#e2e8f0',
     shadowColor: '#000',
