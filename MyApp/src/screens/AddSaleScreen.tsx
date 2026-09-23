@@ -78,6 +78,7 @@ type SaleItem = {
   id?: string | number;
   productId?: string | number | null;
   product: string;
+  batchNo?: string;
   quantity: string;
   rate: string;
   discount: string;
@@ -95,6 +96,7 @@ type SaleItem = {
 const createEmptyItem = (): SaleItem => ({
   productId: null,
   product: '',
+  batchNo: '',
   quantity: '',
   rate: '',
   discount: '0',
@@ -318,6 +320,9 @@ const AddSaleScreen = ({navigation, route}: Props) => {
 
   const [modalProductId, setModalProductId] =
     useState<string | number | null>(null);
+
+  const [modalBatchNo, setModalBatchNo] =
+    useState('');
 
   const [modalQuantity, setModalQuantity] =
     useState('1');
@@ -598,6 +603,7 @@ const AddSaleScreen = ({navigation, route}: Props) => {
     }
     setModalProduct('');
     setModalProductId(null);
+    setModalBatchNo('');
     setModalQuantity('1');
     setModalRate('');
     setModalDiscount('0');
@@ -612,6 +618,7 @@ const AddSaleScreen = ({navigation, route}: Props) => {
     setEditingIndex(index);
     setModalProduct(item.product);
     setModalProductId(item.productId ?? null);
+    setModalBatchNo(item.batchNo || '');
     setModalQuantity(item.quantity || '1');
     setModalRate(item.rate || '');
     setModalDiscount(item.discount || '0');
@@ -621,9 +628,10 @@ const AddSaleScreen = ({navigation, route}: Props) => {
     setModalVisible(true);
   };
 
-  const handleSelectModalProduct = (product: Product) => {
+  const handleSelectModalProduct = (product: Product & { batch_no?: string; batchNo?: string; batch?: string }) => {
     setModalProduct(product.name);
     setModalProductId(product.id);
+    setModalBatchNo(String(product.batch_no ?? product.batchNo ?? product.batch ?? ''));
     setModalRate(String(product.selling_price ?? product.rate ?? ''));
     setModalDiscount(String(product.discount ?? '0'));
     setModalHsn(String(product.hsn ?? ''));
@@ -663,6 +671,7 @@ const AddSaleScreen = ({navigation, route}: Props) => {
     const newItem: SaleItem = {
       productId: modalProductId,
       product: modalProduct.trim(),
+      batchNo: modalBatchNo.trim(),
       quantity: modalQuantity,
       rate: modalRate,
       discount: modalDiscount || '0',
@@ -1024,7 +1033,13 @@ const AddSaleScreen = ({navigation, route}: Props) => {
           <View style={styles.dropdownContainer}>
             <TouchableOpacity
               style={styles.selectBtn}
-              onPress={() => setShowCustomers(!showCustomers)}
+              onPress={() => {
+                const nextState = !showCustomers;
+                setShowCustomers(nextState);
+                if (nextState) {
+                  loadCustomersFromDB();
+                }
+              }}
               activeOpacity={0.8}>
               <Text
                 style={[
@@ -1044,18 +1059,15 @@ const AddSaleScreen = ({navigation, route}: Props) => {
                   </View>
                 ) : (
                   (() => {
-                    const filteredCustomers = customers.filter((cust: Customer) =>
-                      (cust.name || '').toLowerCase().includes((Customer || '').toLowerCase()),
-                    );
-                    if (filteredCustomers.length === 0) {
-                      return <Text style={styles.emptyText}>No customers found</Text>;
+                    if (customers.length === 0) {
+                      return <Text style={styles.emptyText}>No customers found in database</Text>;
                     }
                     return (
                       <ScrollView
                         nestedScrollEnabled
                         keyboardShouldPersistTaps="handled"
                         style={{maxHeight: 180}}>
-                        {filteredCustomers.map((cust: Customer) => (
+                        {customers.map((cust: Customer) => (
                           <TouchableOpacity
                             key={cust.id}
                             style={styles.dropdownMenuItem}
@@ -1609,6 +1621,18 @@ const AddSaleScreen = ({navigation, route}: Props) => {
                       </ScrollView>
                     </View>
                   )}
+                </View>
+
+                {/* BATCH NO FIELD */}
+                <View style={{marginTop: 10}}>
+                  <Text style={styles.modalFieldLabel}>Batch No.</Text>
+                  <TextInput
+                    style={styles.modalInput}
+                    value={modalBatchNo}
+                    onChangeText={setModalBatchNo}
+                    placeholder="Enter Batch No."
+                    placeholderTextColor="#94a3b8"
+                  />
                 </View>
 
                 {/* QUANTITY & RATE ROW */}

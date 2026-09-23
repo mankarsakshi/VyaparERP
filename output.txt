@@ -1,0 +1,7 @@
+302: "                <Text style={styles.arrow}>{showReasons ? '▲' : '▼'}</Text>\n"
+574: '            <View style={styles.summaryRow}><Text style={styles.summaryLabel}>Subtotal</Text><Text style={styles.summaryValue}>₹{summary.subtotal}</Text></View>\n'
+670: "                <TouchableOpacity onPress={() => setModalVisible(false)}><Text style={{fontSize: 16, color: '#94a3b8', fontWeight: 'bold'}}>?</Text></TouchableOpacity>\n"
+676: "                <Text style={[styles.arrow, { position: 'absolute', right: 12, top: 14 }]}>?</Text>\n"
+685: '                  <Text style={styles.inputLabel}>Rate (?) *</Text>\n'
+699: "                    <Text style={styles.arrow}>{showModalGst ? '?' : '?'}</Text>\n"
+775: "                      <Text style={{fontSize: 13, color: '#1e293b', fontWeight: '700'}}>?{sub.toFixed(2)}</Text>\n"

@@ -720,7 +720,7 @@ const AllSalesScreen = ({navigation, route}: Props) => {
             <View style={styles.tableHeaderRow}>
               <Text style={[styles.columnHeader, styles.colIndex]}>#</Text>
               <Text style={[styles.columnHeader, styles.colInvoice]}>
-                INVOICE NO
+                INVOICE NO.
               </Text>
               <Text style={[styles.columnHeader, styles.colDate]}>DATE</Text>
               <Text style={[styles.columnHeader, styles.colCustomer]}>
