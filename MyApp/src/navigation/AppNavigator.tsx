@@ -60,6 +60,7 @@ import ProductCategoryMasterScreen from '../screens/ProductCategoryMasterScreen'
 import FinancialYearMaster from '../screens/FinancialYearMaster';
 import CreditNoteScreen from '../screens/CreditNoteScreen';
 import CreditNoteHistoryScreen from '../screens/CreditNoteHistoryScreen';
+import DebitNoteScreen from '../screens/DebitNoteScreen';
 import { Screen } from 'react-native-screens';
 
 const Stack =
@@ -422,6 +423,10 @@ const AppNavigator = () => {
         <Stack.Screen
           name="ViewPO"
           component={ViewPurchaseOrderScreen}
+        />
+        <Stack.Screen
+          name="DebitNote"
+          component={DebitNoteScreen}
         />
       </Stack.Navigator>
     
