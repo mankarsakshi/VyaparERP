@@ -61,6 +61,7 @@ import FinancialYearMaster from '../screens/FinancialYearMaster';
 import CreditNoteScreen from '../screens/CreditNoteScreen';
 import CreditNoteHistoryScreen from '../screens/CreditNoteHistoryScreen';
 import DebitNoteScreen from '../screens/DebitNoteScreen';
+import DebitNoteHistoryScreen from '../screens/DebitNoteHistoryScreen';
 import { Screen } from 'react-native-screens';
 
 const Stack =
@@ -427,6 +428,10 @@ const AppNavigator = () => {
         <Stack.Screen
           name="DebitNote"
           component={DebitNoteScreen}
+        />
+        <Stack.Screen
+          name="DebitNoteHistory"
+          component={DebitNoteHistoryScreen}
         />
       </Stack.Navigator>
     

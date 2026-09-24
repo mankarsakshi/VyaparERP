@@ -51,6 +51,7 @@ type Supplier = {
   gstin?: string;
   address?: string;
   state?: string;
+  city?: string;
   pincode?: string;
 };
 
@@ -78,8 +79,12 @@ const DebitNoteScreen = ({ navigation }: any) => {
   const [gstin, setGstin] = useState('');
   const [address, setAddress] = useState('');
   const [state, setState] = useState('');
+  const [city, setCity] = useState('');
   const [pincode, setPincode] = useState('');
-  
+  const [defaultGstRate, setDefaultGstRate] = useState('18%');
+  const [showDefaultGstRates, setShowDefaultGstRates] = useState(false);
+  const DEFAULT_GST_RATES = ['0%', '5%', '12%', '18%', '28%'];
+
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [loadingSuppliers, setLoadingSuppliers] = useState(false);
   const [showSuppliers, setShowSuppliers] = useState(false);
@@ -87,33 +92,29 @@ const DebitNoteScreen = ({ navigation }: any) => {
   const [invoiceNo, setInvoiceNo] = useState('INV-1025');
   const [invoiceDate, setInvoiceDate] = useState('20-09-2026');
 
-  const [reason, setReason] = useState('Purchase Return');
-  const [otherReason, setOtherReason] = useState('');
-  const [showReasons, setShowReasons] = useState(false);
   const REASONS = [
     'Purchase Return',
-    'Post Purchase Discount',
-    'Deficiency in services',
-    'Other'
+    'Additional Charges',
+    'Price Difference',
+    'Other',
   ];
 
-  const [notes, setNotes] = useState('Damaged products returned');
 
   // Products List API State
   const [productsList, setProductsList] = useState<any[]>([]);
   const [loadingProducts, setLoadingProducts] = useState(false);
   const [showProductsDropdown, setShowProductsDropdown] = useState(false);
 
-  // Initial demo items as requested
+  // Initial empty items
+  const emptyItem = (): ProductItem => ({ product: '', batchNo: '', hsn: '', sold: '0', returnQty: '1', rate: '0.00', disc: '0', gst: '18', amt: '0.00', reason: '' });
   const initialItems: ProductItem[] = [
-    { product: 'Laptop', batchNo: 'BATCH-8471', hsn: '8471', sold: '1', returnQty: '1', rate: '50000', disc: '5', gst: '18', amt: '56050.00', reason: 'Damaged' },
-    { product: 'Keyboard', batchNo: 'BATCH-8472', hsn: '8471', sold: '2', returnQty: '2', rate: '1000', disc: '0', gst: '18', amt: '2360.00', reason: 'Defective' },
-    { product: '', batchNo: '', hsn: '', sold: '0', returnQty: '1', rate: '0.00', disc: '0', gst: '18', amt: '0.00', reason: '' },
-    { product: '', batchNo: '', hsn: '', sold: '0', returnQty: '1', rate: '0.00', disc: '0', gst: '18', amt: '0.00', reason: '' },
-    { product: '', batchNo: '', hsn: '', sold: '0', returnQty: '1', rate: '0.00', disc: '0', gst: '18', amt: '0.00', reason: '' },
+    emptyItem(),
+    emptyItem(),
+    emptyItem(),
+    emptyItem(),
+    emptyItem(),
   ];
 
-  const emptyItem = (): ProductItem => ({ product: '', batchNo: '', hsn: '', sold: '0', returnQty: '1', rate: '0.00', disc: '0', gst: '18', amt: '0.00', reason: '' });
   const [items, setItems] = useState<ProductItem[]>(initialItems);
 
   // Modal State
@@ -131,15 +132,14 @@ const DebitNoteScreen = ({ navigation }: any) => {
   const [showModalGst, setShowModalGst] = useState(false);
   const [mReason, setMReason] = useState('');
   const [mOtherReason, setMOtherReason] = useState('');
+  const [showModalReason, setShowModalReason] = useState(false);
 
   // Adjustment State
   const [adjustmentType, setAdjustmentType] = useState('Adjust Against Invoice');
   const [showAdjustment, setShowAdjustment] = useState(false);
   const ADJUSTMENTS = ['Adjust Against Invoice', 'Supplier Credit', 'Refund'];
 
-  const [paymentStatus, setPaymentStatus] = useState('Pending');
-  const [showPaymentStatus, setShowPaymentStatus] = useState(false);
-  const PAYMENT_STATUSES = ['Pending', 'Partially Paid', 'Paid'];
+
 
   const loadSuppliersFromDB = async () => {
     try {
@@ -154,6 +154,7 @@ const DebitNoteScreen = ({ navigation }: any) => {
         gstin: item.gstin ?? item.gst_number ?? '',
         address: item.address ?? '',
         state: item.state ?? '',
+        city: item.city ?? item.district ?? '',
         pincode: item.pincode ?? '',
       }));
       setSuppliers(formattedSuppliers);
@@ -265,6 +266,8 @@ const DebitNoteScreen = ({ navigation }: any) => {
     let taxableAmount = 0;
     let totalGstAmount = 0;
 
+    const gstMap: Record<string, { taxable: number; gstAmt: number }> = {};
+
     items.forEach(item => {
       if (item.product.trim()) {
         const qty = Number(item.returnQty) || 0;
@@ -282,10 +285,16 @@ const DebitNoteScreen = ({ navigation }: any) => {
         discount += itemDisc;
         taxableAmount += itemTax;
         totalGstAmount += itemGst;
+
+        if (!gstMap[gstPercent]) {
+          gstMap[gstPercent] = { taxable: 0, gstAmt: 0 };
+        }
+        gstMap[gstPercent].taxable += itemTax;
+        gstMap[gstPercent].gstAmt += itemGst;
       }
     });
 
-    const isInterState = state.trim() !== '' && state.trim().toLowerCase() !== 'maharashtra';
+    const isInterState = state.trim() !== '' && state.trim().toLowerCase() !== 'maharashtra' && state.trim().toLowerCase() !== 'mh';
     
     const cgst = isInterState ? 0 : totalGstAmount / 2;
     const sgst = isInterState ? 0 : totalGstAmount / 2;
@@ -293,6 +302,23 @@ const DebitNoteScreen = ({ navigation }: any) => {
     
     const debitNoteTotal = Math.round(taxableAmount + totalGstAmount);
     const itemCount = items.filter(i => i.product.trim() !== '').length;
+
+    const breakdown = Object.keys(gstMap).map(rate => {
+      const gVal = Number(rate);
+      const taxVal = gstMap[rate].taxable;
+      const gstVal = gstMap[rate].gstAmt;
+      const cAmt = isInterState ? 0 : gstVal / 2;
+      const sAmt = isInterState ? 0 : gstVal / 2;
+      const iAmt = isInterState ? gstVal : 0;
+      return {
+        rate: gVal,
+        taxable: taxVal,
+        cgst: cAmt,
+        sgst: sAmt,
+        igst: iAmt,
+        totalGst: gstVal
+      };
+    }).filter(b => b.taxable > 0);
 
     return {
       subtotal: subtotal.toFixed(2),
@@ -304,6 +330,7 @@ const DebitNoteScreen = ({ navigation }: any) => {
       debitNoteTotal: debitNoteTotal.toFixed(2),
       itemCount,
       isInterState,
+      breakdown,
     };
   };
 
@@ -334,12 +361,12 @@ const DebitNoteScreen = ({ navigation }: any) => {
             
             <View style={{flexDirection: 'row', gap: 12}}>
               <View style={{flex: 1}}>
-                <Text style={styles.inputLabel}>Debit Note No.</Text>
+                <Text style={styles.inputLabel}>Bill No.</Text>
                 <TextInput style={styles.formInput} value={debitNoteNo} onChangeText={setDebitNoteNo} />
               </View>
 
               <View style={{flex: 1}}>
-                <Text style={styles.inputLabel}>Debit Note Date</Text>
+                <Text style={styles.inputLabel}>Bill Date</Text>
                 <View style={styles.inputWithIcon}>
                   <TextInput style={styles.formInputFlex} value={date} onChangeText={setDate} />
                   <Text style={{marginRight: 12}}>📅</Text>
@@ -378,10 +405,10 @@ const DebitNoteScreen = ({ navigation }: any) => {
                   ) : (
                     (() => {
                       const listToDisplay = suppliers.length > 0 ? suppliers : [
-                        { id: '1', name: 'Ramesh Suppliers', phone: '9823012345', address: 'Shop 12, Market Yard', state: 'Maharashtra', pincode: '411001', gstin: '27AABCR12341ZB' },
-                        { id: '2', name: 'Mahavir Electronics', phone: '9890123456', address: 'Plot 45, MIDC Area', state: 'Maharashtra', pincode: '400001', gstin: '27AABCS56782ZC' },
-                        { id: '3', name: 'Sun Distributors', phone: '9765432109', address: 'Main Road, Station Area', state: 'Maharashtra', pincode: '411002', gstin: '27AABCV90123ZD' },
-                        { id: '4', name: 'Global Tech Components', phone: '9123456789', address: 'Tech Park, Whitefield', state: 'Karnataka', pincode: '560066', gstin: '29AABCG34564ZE' },
+                        { id: '1', name: 'Ramesh Suppliers', phone: '9823012345', address: 'Shop 12, Market Yard', state: 'Maharashtra', city: 'Pune', pincode: '411001', gstin: '27AABCR12341ZB' },
+                        { id: '2', name: 'Mahavir Electronics', phone: '9890123456', address: 'Plot 45, MIDC Area', state: 'Maharashtra', city: 'Mumbai', pincode: '400001', gstin: '27AABCS56782ZC' },
+                        { id: '3', name: 'Sun Distributors', phone: '9765432109', address: 'Main Road, Station Area', state: 'Maharashtra', city: 'Pune', pincode: '411002', gstin: '27AABCV90123ZD' },
+                        { id: '4', name: 'Global Tech Components', phone: '9123456789', address: 'Tech Park, Whitefield', state: 'Karnataka', city: 'Bengaluru', pincode: '560066', gstin: '29AABCG34564ZE' },
                       ];
                       const filtered = listToDisplay.filter((s: Supplier) =>
                         (s.name || '').toLowerCase().includes((supplier || '').toLowerCase())
@@ -402,6 +429,7 @@ const DebitNoteScreen = ({ navigation }: any) => {
                                 setGstin(s.gstin ?? '');
                                 setAddress(s.address ?? '');
                                 setState(s.state ?? '');
+                                setCity(s.city ?? '');
                                 setPincode(s.pincode ?? '');
                                 setShowSuppliers(false);
                               }}>
@@ -415,6 +443,74 @@ const DebitNoteScreen = ({ navigation }: any) => {
                   )}
                 </View>
               )}
+            </View>
+
+            {/* SUPPLIER DETAILS (NAME, PHONE, STATE, CITY, DEFAULT GST RATE, TAX TYPE) */}
+            <View style={{flexDirection: 'row', gap: 12, marginTop: 10}}>
+              <View style={{flex: 1}}>
+                <Text style={styles.inputLabel}>Supplier Name</Text>
+                <TextInput style={styles.formInput} value={supplierName} onChangeText={setSupplierName} placeholder="Enter supplier name" />
+              </View>
+              <View style={{flex: 1}}>
+                <Text style={styles.inputLabel}>Phone Number</Text>
+                <TextInput style={styles.formInput} value={phone} onChangeText={setPhone} placeholder="Enter phone no" keyboardType="phone-pad" />
+              </View>
+            </View>
+
+            <View style={{flexDirection: 'row', gap: 12, marginTop: 10}}>
+              <View style={{flex: 1}}>
+                <Text style={styles.inputLabel}>State</Text>
+                <TextInput style={styles.formInput} value={state} onChangeText={setState} placeholder="Enter state" />
+              </View>
+              <View style={{flex: 1}}>
+                <Text style={styles.inputLabel}>City</Text>
+                <TextInput style={styles.formInput} value={city} onChangeText={setCity} placeholder="Enter city" />
+              </View>
+            </View>
+
+            <View style={{flexDirection: 'row', gap: 12, marginTop: 10}}>
+              <View style={[styles.dropdownContainer, {flex: 1, zIndex: 11}]}>
+                <Text style={styles.inputLabel}>Default GST Rate</Text>
+                <TouchableOpacity style={styles.dropdown} onPress={() => setShowDefaultGstRates(!showDefaultGstRates)}>
+                  <Text style={styles.dropdownText}>{defaultGstRate}</Text>
+                  <Text style={styles.arrow}>{showDefaultGstRates ? '▲' : '▼'}</Text>
+                </TouchableOpacity>
+                {showDefaultGstRates && (
+                  <View style={styles.dropdownMenu}>
+                    <ScrollView nestedScrollEnabled keyboardShouldPersistTaps="handled" style={{maxHeight: 220}}>
+                      {DEFAULT_GST_RATES.map((rate, index) => (
+                        <TouchableOpacity
+                          key={index}
+                          style={styles.dropdownMenuItem}
+                          onPress={() => {
+                            setDefaultGstRate(rate);
+                            setShowDefaultGstRates(false);
+                          }}>
+                          <Text style={styles.dropdownMainText}>{rate}</Text>
+                        </TouchableOpacity>
+                      ))}
+                    </ScrollView>
+                  </View>
+                )}
+              </View>
+
+              <View style={{flex: 1}}>
+                <Text style={styles.inputLabel}>Tax Type</Text>
+                <View style={{
+                  backgroundColor: '#fff7ed', 
+                  borderWidth: 1, 
+                  borderColor: '#fed7aa',
+                  borderRadius: 10,
+                  minHeight: 44,
+                  paddingVertical: 8,
+                  justifyContent: 'center',
+                  paddingHorizontal: 12
+                }}>
+                  <Text style={{color: '#c2410c', fontWeight: '700', fontSize: 13, lineHeight: 18}}>
+                    {(!state || state.trim().toLowerCase() === 'maharashtra' || state.trim().toLowerCase() === 'mh') ? 'CGST + SGST\n(Intra-state)' : 'IGST\n(Inter-state)'}
+                  </Text>
+                </View>
+              </View>
             </View>
 
             {/* ORIGINAL INVOICE NO & DATE */}
@@ -433,51 +529,6 @@ const DebitNoteScreen = ({ navigation }: any) => {
               </View>
             </View>
 
-            {/* REASON */}
-            <Text style={[styles.inputLabel, {marginTop: 14}]}>Reason</Text>
-            <View style={[styles.dropdownContainer, { zIndex: 998 }]}>
-              <TouchableOpacity style={styles.dropdown} onPress={() => setShowReasons(!showReasons)}>
-                <Text style={[styles.dropdownText, !reason && styles.placeholderText]}>{reason || 'Select reason'}</Text>
-                <Text style={styles.arrow}>{showReasons ? '▲' : '▼'}</Text>
-              </TouchableOpacity>
-              {showReasons && (
-                <View style={styles.dropdownMenu}>
-                  <ScrollView nestedScrollEnabled keyboardShouldPersistTaps="handled" style={{maxHeight: 180}}>
-                    {REASONS.map((r, index) => (
-                      <TouchableOpacity
-                        key={index}
-                        style={styles.dropdownMenuItem}
-                        onPress={() => {
-                          setReason(r);
-                          setShowReasons(false);
-                        }}>
-                        <Text style={styles.dropdownMainText}>{r}</Text>
-                      </TouchableOpacity>
-                    ))}
-                  </ScrollView>
-                </View>
-              )}
-            </View>
-
-            {reason === 'Other' && (
-              <TextInput 
-                style={[styles.formInput, { marginTop: 10 }]} 
-                placeholder="Type your reason here..." 
-                value={otherReason} 
-                onChangeText={setOtherReason} 
-              />
-            )}
-
-            {/* NOTES */}
-            <Text style={[styles.inputLabel, {marginTop: 14}]}>Notes</Text>
-            <TextInput
-              style={[styles.formInput, styles.textAreaInput]}
-              value={notes}
-              onChangeText={setNotes}
-              multiline
-              numberOfLines={3}
-              placeholder="Damaged products returned"
-            />
           </View>
 
           {/* PRODUCT INFORMATION */}
@@ -499,6 +550,7 @@ const DebitNoteScreen = ({ navigation }: any) => {
                 setMGst('18');
                 setMReason('');
                 setMOtherReason('');
+                setShowModalReason(false);
                 setModalVisible(true);
               }}>
                 <Text style={styles.addBtnText}>[ + ]</Text>
@@ -512,6 +564,7 @@ const DebitNoteScreen = ({ navigation }: any) => {
                   <Text style={[styles.th, {width: 35}]}>#</Text>
                   <Text style={[styles.th, {width: 110}]}>Product</Text>
                   <Text style={[styles.th, {width: 90}]}>Batch No.</Text>
+                  <Text style={[styles.th, {width: 100}]}>Reason</Text>
                   <Text style={[styles.th, {width: 50}]}>Qty</Text>
                   <Text style={[styles.th, {width: 70}]}>Rate</Text>
                   <Text style={[styles.th, {width: 50}]}>Disc</Text>
@@ -550,6 +603,7 @@ const DebitNoteScreen = ({ navigation }: any) => {
                       <Text style={[styles.td, {width: 35, color, fontWeight}]}>{index + 1}</Text>
                       <Text style={[styles.td, {width: 110, color, fontWeight}]}>{item.product || 'Select Product'}</Text>
                       <Text style={[styles.td, {width: 90, color, fontWeight}]}>{item.batchNo || '-'}</Text>
+                      <Text style={[styles.td, {width: 100, color, fontWeight}]}>{item.reason || '-'}</Text>
                       <Text style={[styles.td, {width: 50, color, fontWeight}]}>{item.returnQty}</Text>
                       <Text style={[styles.td, {width: 70, color, fontWeight}]}>{item.rate}</Text>
                       <Text style={[styles.td, {width: 50, color, fontWeight}]}>{item.disc}%</Text>
@@ -590,6 +644,42 @@ const DebitNoteScreen = ({ navigation }: any) => {
             </View>
           </View>
 
+          {/* GST BREAKDOWN SUMMARY */}
+          <View style={styles.formCard}>
+            <Text style={styles.cardHeaderTitle}>GST Breakdown Summary</Text>
+            
+            <Text style={{fontSize: 12, color: '#94a3b8', marginBottom: 10}}>← Horizontally Scrollable →</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{borderWidth: 1, borderColor: '#e2e8f0', borderRadius: 12}}>
+              <View>
+                <View style={{flexDirection: 'row', backgroundColor: '#fff7ed', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#fed7aa'}}>
+                  <Text style={{width: 80, fontSize: 12, fontWeight: '800', color: '#c2410c', textAlign: 'center'}}>GST RATE</Text>
+                  <Text style={{width: 130, fontSize: 12, fontWeight: '800', color: '#c2410c', textAlign: 'center'}}>TAXABLE AMOUNT</Text>
+                  <Text style={{width: 90, fontSize: 12, fontWeight: '800', color: '#c2410c', textAlign: 'center'}}>CGST</Text>
+                  <Text style={{width: 90, fontSize: 12, fontWeight: '800', color: '#c2410c', textAlign: 'center'}}>SGST</Text>
+                  <Text style={{width: 90, fontSize: 12, fontWeight: '800', color: '#c2410c', textAlign: 'center'}}>IGST</Text>
+                  <Text style={{width: 100, fontSize: 12, fontWeight: '800', color: '#c2410c', textAlign: 'center'}}>TOTAL GST</Text>
+                </View>
+
+                {summary.breakdown.length === 0 ? (
+                  <View style={{paddingVertical: 24, alignItems: 'center'}}>
+                    <Text style={{color: '#94a3b8', fontSize: 14, fontWeight: '600'}}>No GST applicable</Text>
+                  </View>
+                ) : (
+                  summary.breakdown.map((b, i) => (
+                    <View key={i} style={{flexDirection: 'row', paddingVertical: 14, borderBottomWidth: i === summary.breakdown.length - 1 ? 0 : 1, borderBottomColor: '#f1f5f9'}}>
+                      <Text style={{width: 80, fontSize: 13, color: '#1e293b', textAlign: 'center', fontWeight: '600'}}>{b.rate}%</Text>
+                      <Text style={{width: 130, fontSize: 13, color: '#1e293b', textAlign: 'center', fontWeight: '500'}}>₹{b.taxable.toFixed(2)}</Text>
+                      <Text style={{width: 90, fontSize: 13, color: '#1e293b', textAlign: 'center', fontWeight: '500'}}>₹{b.cgst.toFixed(2)}</Text>
+                      <Text style={{width: 90, fontSize: 13, color: '#1e293b', textAlign: 'center', fontWeight: '500'}}>₹{b.sgst.toFixed(2)}</Text>
+                      <Text style={{width: 90, fontSize: 13, color: '#1e293b', textAlign: 'center', fontWeight: '500'}}>₹{b.igst.toFixed(2)}</Text>
+                      <Text style={{width: 100, fontSize: 13, color: '#1e293b', textAlign: 'center', fontWeight: '500'}}>₹{b.totalGst.toFixed(2)}</Text>
+                    </View>
+                  ))
+                )}
+              </View>
+            </ScrollView>
+          </View>
+
           {/* ADJUSTMENT */}
           <View style={[styles.formCard, { zIndex: 10 }]}>
             <Text style={styles.cardHeaderTitle}>Adjustment</Text>
@@ -619,30 +709,7 @@ const DebitNoteScreen = ({ navigation }: any) => {
               )}
             </View>
 
-            <Text style={[styles.inputLabel, {marginTop: 14}]}>Payment Status</Text>
-            <View style={[styles.dropdownContainer, { zIndex: 10 }]}>
-              <TouchableOpacity style={styles.dropdown} onPress={() => setShowPaymentStatus(!showPaymentStatus)}>
-                <Text style={styles.dropdownText}>{paymentStatus}</Text>
-                <Text style={styles.arrow}>{showPaymentStatus ? '▲' : '▼'}</Text>
-              </TouchableOpacity>
-              {showPaymentStatus && (
-                <View style={styles.dropdownMenu}>
-                  <ScrollView nestedScrollEnabled keyboardShouldPersistTaps="handled" style={{maxHeight: 150}}>
-                    {PAYMENT_STATUSES.map((status, index) => (
-                      <TouchableOpacity
-                        key={index}
-                        style={styles.dropdownMenuItem}
-                        onPress={() => {
-                          setPaymentStatus(status);
-                          setShowPaymentStatus(false);
-                        }}>
-                        <Text style={styles.dropdownMainText}>{status}</Text>
-                      </TouchableOpacity>
-                    ))}
-                  </ScrollView>
-                </View>
-              )}
-            </View>
+
           </View>
 
           {/* ACTION BUTTONS */}
@@ -660,225 +727,274 @@ const DebitNoteScreen = ({ navigation }: any) => {
 
       {/* ADD / EDIT PRODUCT MODAL */}
       <Modal visible={modalVisible} transparent animationType="fade" onRequestClose={() => setModalVisible(false)}>
-        <View style={{flex: 1, backgroundColor: 'rgba(15,23,42,0.45)', justifyContent: 'center', padding: 20}}>
-          <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-            <View style={{backgroundColor: '#fff', borderRadius: 20, padding: 20}}>
-              <View style={{flexDirection: 'row', justifyContent: 'space-between', marginBottom: 15, borderBottomWidth: 1, borderBottomColor: '#f1f5f9', paddingBottom: 10}}>
+        <View style={{flex: 1, backgroundColor: 'rgba(15,23,42,0.45)', justifyContent: 'center', padding: 16}}>
+          <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{width: '100%', maxWidth: 500, alignSelf: 'center'}}>
+            <View style={{backgroundColor: '#fff', borderRadius: 20, maxHeight: '90%', overflow: 'hidden'}}>
+              <View style={{flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingTop: 18, paddingBottom: 12, borderBottomWidth: 1, borderBottomColor: '#f1f5f9'}}>
                 <Text style={{fontSize: 17, fontWeight: '800', color: '#0f172a'}}>
                   {editingIndex !== null && items[editingIndex]?.product ? 'Edit Product' : 'Add Product'}
                 </Text>
-                <TouchableOpacity onPress={() => setModalVisible(false)}><Text style={{fontSize: 16, color: '#94a3b8', fontWeight: 'bold'}}>✕</Text></TouchableOpacity>
+                <TouchableOpacity onPress={() => setModalVisible(false)} hitSlop={{top: 10, bottom: 10, left: 10, right: 10}}>
+                  <Text style={{fontSize: 16, color: '#94a3b8', fontWeight: 'bold'}}>✕</Text>
+                </TouchableOpacity>
               </View>
 
-              <Text style={styles.inputLabel}>Product *</Text>
-              <View style={[styles.dropdownContainer, { zIndex: 50 }]}>
-                <TextInput 
-                  style={[styles.formInput, { paddingRight: 30 }]} 
-                  value={mProduct} 
-                  onChangeText={(text) => {
-                    setMProduct(text);
-                    setShowProductsDropdown(true);
-                  }} 
-                  onFocus={() => setShowProductsDropdown(true)}
-                  placeholder="Select product" 
-                />
-                <TouchableOpacity 
-                  style={{ position: 'absolute', right: 0, top: 0, bottom: 0, width: 40, justifyContent: 'center', alignItems: 'center' }}
-                  onPress={() => setShowProductsDropdown(!showProductsDropdown)}
-                >
-                  <Text style={[styles.arrow]}>{showProductsDropdown ? '▲' : '▼'}</Text>
-                </TouchableOpacity>
+              <ScrollView showsVerticalScrollIndicator={true} keyboardShouldPersistTaps="handled" contentContainerStyle={{padding: 20}}>
+                <Text style={styles.inputLabel}>Product *</Text>
+                <View style={[styles.dropdownContainer, { zIndex: 50 }]}>
+                  <TextInput 
+                    style={[styles.formInput, { paddingRight: 30 }]} 
+                    value={mProduct} 
+                    onChangeText={(text) => {
+                      setMProduct(text);
+                      setShowProductsDropdown(true);
+                    }} 
+                    onFocus={() => setShowProductsDropdown(true)}
+                    placeholder="Select product" 
+                  />
+                  <TouchableOpacity 
+                    style={{ position: 'absolute', right: 0, top: 0, bottom: 0, width: 40, justifyContent: 'center', alignItems: 'center' }}
+                    onPress={() => setShowProductsDropdown(!showProductsDropdown)}
+                  >
+                    <Text style={[styles.arrow]}>{showProductsDropdown ? '▲' : '▼'}</Text>
+                  </TouchableOpacity>
 
-                {showProductsDropdown && (
-                  <View style={[styles.dropdownMenu, { top: 46 }]}>
-                    {loadingProducts ? (
-                      <View style={styles.loaderContainer}>
-                        <ActivityIndicator size="small" color="#ea7e30" />
+                  {showProductsDropdown && (
+                    <View style={[styles.dropdownMenu, { top: 46 }]}>
+                      {loadingProducts ? (
+                        <View style={styles.loaderContainer}>
+                          <ActivityIndicator size="small" color="#ea7e30" />
+                        </View>
+                      ) : (
+                        (() => {
+                          const listToSearch = productsList.length > 0 ? productsList : [
+                            { product_name: 'Laptop', hsn_code: '8471', sales_price: 50000, gst_rate: '18', batch_no: 'BATCH-8471' },
+                            { product_name: 'Keyboard', hsn_code: '8471', sales_price: 1000, gst_rate: '18', batch_no: 'BATCH-8472' },
+                            { product_name: 'Wireless Mouse', hsn_code: '8471', sales_price: 450, gst_rate: '18', batch_no: 'BATCH-101' },
+                            { product_name: 'USB-C Cable', hsn_code: '8544', sales_price: 299, gst_rate: '18', batch_no: 'BATCH-103' },
+                            { product_name: '27-inch Monitor', hsn_code: '8528', sales_price: 18500, gst_rate: '18', batch_no: 'BATCH-104' },
+                            { product_name: 'Bluetooth Speaker', hsn_code: '8518', sales_price: 1200, gst_rate: '18', batch_no: 'BATCH-105' },
+                            { product_name: 'External Hard Drive', hsn_code: '8471', sales_price: 4500, gst_rate: '18', batch_no: 'BATCH-106' },
+                          ];
+                          const filtered = listToSearch.filter((p: any) => 
+                            (p.product_name || p.name || p.title || '').toLowerCase().includes((mProduct || '').toLowerCase())
+                          );
+                          if (filtered.length === 0) {
+                            return <Text style={styles.emptyText}>No products found</Text>;
+                          }
+                          return (
+                            <ScrollView nestedScrollEnabled showsVerticalScrollIndicator={true} keyboardShouldPersistTaps="always" style={{maxHeight: 320}}>
+                              {filtered.map((p: any, idx: number) => {
+                                const pName = p.product_name || p.name || p.title || '';
+                                const pHsn = p.hsn_code || p.hsn || '';
+                                const pRate = (p.sales_price ?? p.rate ?? p.price ?? 0).toString();
+                                const pGst = (p.gst_rate ?? p.tax_rate ?? p.gst ?? '18').toString();
+                                const pBatch = (p.batch_no ?? p.batch ?? p.batchNo ?? '').toString();
+                                return (
+                                  <TouchableOpacity
+                                    key={p.id || p.product_id || idx}
+                                    style={styles.dropdownMenuItem}
+                                    onPress={() => {
+                                      setMProduct(pName);
+                                      setMHsn(pHsn);
+                                      setMRate(pRate);
+                                      setMGst(pGst);
+                                      if (pBatch) setMBatchNo(pBatch);
+                                      setShowProductsDropdown(false);
+                                    }}>
+                                    <Text style={styles.dropdownMainText}>{pName}</Text>
+                                    <Text style={styles.dropdownSubText}>HSN: {pHsn || '-'} | Rate: ₹{pRate} | GST: {pGst}%</Text>
+                                  </TouchableOpacity>
+                                );
+                              })}
+                            </ScrollView>
+                          );
+                        })()
+                      )}
+                    </View>
+                  )}
+                </View>
+
+                <View style={{ marginTop: 10 }}>
+                  <Text style={styles.inputLabel}>Batch No.</Text>
+                  <TextInput
+                    style={styles.formInput}
+                    value={mBatchNo}
+                    onChangeText={setMBatchNo}
+                    placeholder="Enter Batch No."
+                  />
+                </View>
+                
+                <View style={{flexDirection: 'row', gap: 10, marginTop: 10}}>
+                  <View style={{flex: 1}}>
+                    <Text style={styles.inputLabel}>Quantity *</Text>
+                    <TextInput style={styles.formInput} value={mReturnQty} onChangeText={setMReturnQty} keyboardType="numeric" />
+                  </View>
+                  <View style={{flex: 1}}>
+                    <Text style={styles.inputLabel}>Rate (₹) *</Text>
+                    <TextInput style={styles.formInput} value={mRate} onChangeText={setMRate} keyboardType="decimal-pad" />
+                  </View>
+                </View>
+
+                <View style={{flexDirection: 'row', gap: 10, marginTop: 10}}>
+                  <View style={{flex: 1}}>
+                    <Text style={styles.inputLabel}>Discount (%)</Text>
+                    <TextInput style={styles.formInput} value={mDisc} onChangeText={setMDisc} keyboardType="decimal-pad" />
+                  </View>
+                  <View style={[styles.dropdownContainer, {flex: 1, zIndex: 40}]}>
+                    <Text style={styles.inputLabel}>GST (%)</Text>
+                    <TouchableOpacity style={styles.dropdown} onPress={() => setShowModalGst(!showModalGst)}>
+                      <Text style={styles.dropdownText}>{mGst}{mGst.includes('%') ? '' : '%'}</Text>
+                      <Text style={styles.arrow}>{showModalGst ? '▲' : '▼'}</Text>
+                    </TouchableOpacity>
+                    {showModalGst && (
+                      <View style={styles.dropdownMenu}>
+                        <ScrollView nestedScrollEnabled keyboardShouldPersistTaps="handled" style={{maxHeight: 220}}>
+                          {['0', '5', '12', '18', '28'].map((rate, index) => (
+                            <TouchableOpacity
+                              key={index}
+                              style={styles.dropdownMenuItem}
+                              onPress={() => {
+                                setMGst(rate);
+                                setShowModalGst(false);
+                              }}>
+                              <Text style={styles.dropdownMainText}>{rate}%</Text>
+                            </TouchableOpacity>
+                          ))}
+                        </ScrollView>
                       </View>
-                    ) : (
-                      (() => {
-                        const listToSearch = productsList.length > 0 ? productsList : [
-                          { product_name: 'Laptop', hsn_code: '8471', sales_price: 50000, gst_rate: '18', batch_no: 'BATCH-8471' },
-                          { product_name: 'Keyboard', hsn_code: '8471', sales_price: 1000, gst_rate: '18', batch_no: 'BATCH-8472' },
-                          { product_name: 'Wireless Mouse', hsn_code: '8471', sales_price: 450, gst_rate: '18', batch_no: 'BATCH-101' },
-                          { product_name: 'USB-C Cable', hsn_code: '8544', sales_price: 299, gst_rate: '18', batch_no: 'BATCH-103' },
-                        ];
-                        const filtered = listToSearch.filter((p: any) => 
-                          (p.product_name || p.name || p.title || '').toLowerCase().includes((mProduct || '').toLowerCase())
-                        );
-                        if (filtered.length === 0) {
-                          return <Text style={styles.emptyText}>No products found</Text>;
-                        }
-                        return (
-                          <ScrollView nestedScrollEnabled keyboardShouldPersistTaps="handled" style={{maxHeight: 200}}>
-                            {filtered.map((p: any, idx: number) => {
-                              const pName = p.product_name || p.name || p.title || '';
-                              const pHsn = p.hsn_code || p.hsn || '';
-                              const pRate = (p.sales_price ?? p.rate ?? p.price ?? 0).toString();
-                              const pGst = (p.gst_rate ?? p.tax_rate ?? p.gst ?? '18').toString();
-                              const pBatch = (p.batch_no ?? p.batch ?? p.batchNo ?? '').toString();
-                              return (
-                                <TouchableOpacity
-                                  key={p.id || p.product_id || idx}
-                                  style={styles.dropdownMenuItem}
-                                  onPress={() => {
-                                    setMProduct(pName);
-                                    setMHsn(pHsn);
-                                    setMRate(pRate);
-                                    setMGst(pGst);
-                                    if (pBatch) setMBatchNo(pBatch);
-                                    setShowProductsDropdown(false);
-                                  }}>
-                                  <Text style={styles.dropdownMainText}>{pName}</Text>
-                                  <Text style={styles.dropdownSubText}>HSN: {pHsn || '-'} | Rate: ₹{pRate} | GST: {pGst}%</Text>
-                                </TouchableOpacity>
-                              );
-                            })}
-                          </ScrollView>
-                        );
-                      })()
                     )}
                   </View>
-                )}
-              </View>
+                </View>
 
-              <View style={{ marginTop: 10 }}>
-                <Text style={styles.inputLabel}>Batch No.</Text>
-                <TextInput
-                  style={styles.formInput}
-                  value={mBatchNo}
-                  onChangeText={setMBatchNo}
-                  placeholder="Enter Batch No."
-                />
-              </View>
-              
-              <View style={{flexDirection: 'row', gap: 10, marginTop: 10}}>
-                <View style={{flex: 1}}>
-                  <Text style={styles.inputLabel}>Quantity *</Text>
-                  <TextInput style={styles.formInput} value={mReturnQty} onChangeText={setMReturnQty} keyboardType="numeric" />
+                <View style={{flexDirection: 'row', gap: 10, marginTop: 10}}>
+                  <View style={{flex: 1.5}}>
+                    <Text style={styles.inputLabel}>HSN Code</Text>
+                    <TextInput style={styles.formInput} value={mHsn} onChangeText={setMHsn} placeholder="Enter HSN" />
+                  </View>
+                  
+                  {(() => {
+                    const isInter = state.trim() !== '' && state.trim().toLowerCase() !== 'maharashtra';
+                    const gVal = Number(mGst.replace('%', '')) || 0;
+                    const cPercent = isInter ? 0 : gVal / 2;
+                    const sPercent = isInter ? 0 : gVal / 2;
+                    const iPercent = isInter ? gVal : 0;
+                    
+                    return (
+                      <View style={{flex: 2, flexDirection: 'row', gap: 6}}>
+                        <View style={{flex: 1, alignItems: 'center'}}>
+                          <Text style={[styles.inputLabel, {fontSize: 10, marginBottom: 4}]}>CGST</Text>
+                          <View style={{backgroundColor: '#f1f5f9', borderRadius: 8, height: 44, width: '100%', justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: '#e2e8f0'}}>
+                            <Text style={{fontWeight: '700', color: '#1e293b'}}>{cPercent}%</Text>
+                          </View>
+                        </View>
+                        <View style={{flex: 1, alignItems: 'center'}}>
+                          <Text style={[styles.inputLabel, {fontSize: 10, marginBottom: 4}]}>SGST</Text>
+                          <View style={{backgroundColor: '#f1f5f9', borderRadius: 8, height: 44, width: '100%', justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: '#e2e8f0'}}>
+                            <Text style={{fontWeight: '700', color: '#1e293b'}}>{sPercent}%</Text>
+                          </View>
+                        </View>
+                        <View style={{flex: 1, alignItems: 'center'}}>
+                          <Text style={[styles.inputLabel, {fontSize: 10, marginBottom: 4}]}>IGST</Text>
+                          <View style={{backgroundColor: '#f1f5f9', borderRadius: 8, height: 44, width: '100%', justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: '#e2e8f0'}}>
+                            <Text style={{fontWeight: '700', color: '#1e293b'}}>{iPercent}%</Text>
+                          </View>
+                        </View>
+                      </View>
+                    );
+                  })()}
                 </View>
-                <View style={{flex: 1}}>
-                  <Text style={styles.inputLabel}>Rate (₹) *</Text>
-                  <TextInput style={styles.formInput} value={mRate} onChangeText={setMRate} keyboardType="decimal-pad" />
-                </View>
-              </View>
 
-              <View style={{flexDirection: 'row', gap: 10, marginTop: 10}}>
-                <View style={{flex: 1}}>
-                  <Text style={styles.inputLabel}>Discount (%)</Text>
-                  <TextInput style={styles.formInput} value={mDisc} onChangeText={setMDisc} keyboardType="decimal-pad" />
-                </View>
-                <View style={[styles.dropdownContainer, {flex: 1, zIndex: 40}]}>
-                  <Text style={styles.inputLabel}>GST (%)</Text>
-                  <TouchableOpacity style={styles.dropdown} onPress={() => setShowModalGst(!showModalGst)}>
-                    <Text style={styles.dropdownText}>{mGst}{mGst.includes('%') ? '' : '%'}</Text>
-                    <Text style={styles.arrow}>{showModalGst ? '▲' : '▼'}</Text>
+                {/* REASON FOR PRODUCT RETURN */}
+                <View style={[styles.dropdownContainer, { marginTop: 10, zIndex: 35 }]}>
+                  <Text style={styles.inputLabel}>Reason</Text>
+                  <TouchableOpacity style={styles.dropdown} onPress={() => setShowModalReason(!showModalReason)}>
+                    <Text style={[styles.dropdownText, !mReason && styles.placeholderText]}>{mReason || 'Select reason'}</Text>
+                    <Text style={styles.arrow}>{showModalReason ? '▲' : '▼'}</Text>
                   </TouchableOpacity>
-                  {showModalGst && (
+                  {showModalReason && (
                     <View style={styles.dropdownMenu}>
-                      <ScrollView nestedScrollEnabled keyboardShouldPersistTaps="handled" style={{maxHeight: 120}}>
-                        {['0', '5', '12', '18', '28'].map((rate, index) => (
+                      <ScrollView nestedScrollEnabled keyboardShouldPersistTaps="handled" style={{maxHeight: 160}}>
+                        {REASONS.map((r, index) => (
                           <TouchableOpacity
                             key={index}
                             style={styles.dropdownMenuItem}
                             onPress={() => {
-                              setMGst(rate);
-                              setShowModalGst(false);
+                              setMReason(r);
+                              setShowModalReason(false);
+                              if (r !== 'Other') {
+                                setMOtherReason('');
+                              }
                             }}>
-                            <Text style={styles.dropdownMainText}>{rate}%</Text>
+                            <Text style={styles.dropdownMainText}>{r}</Text>
                           </TouchableOpacity>
                         ))}
                       </ScrollView>
                     </View>
                   )}
                 </View>
-              </View>
 
-              <View style={{flexDirection: 'row', gap: 10, marginTop: 10}}>
-                <View style={{flex: 1.5}}>
-                  <Text style={styles.inputLabel}>HSN Code</Text>
-                  <TextInput style={styles.formInput} value={mHsn} onChangeText={setMHsn} placeholder="Enter HSN" />
-                </View>
-                
+                {mReason === 'Other' && (
+                  <View style={{ marginTop: 8 }}>
+                    <Text style={styles.inputLabel}>Specify Other Reason</Text>
+                    <TextInput
+                      style={styles.formInput}
+                      placeholder="Type your reason here..."
+                      placeholderTextColor="#94a3b8"
+                      value={mOtherReason}
+                      onChangeText={setMOtherReason}
+                    />
+                  </View>
+                )}
+
                 {(() => {
-                  const isInter = state.trim() !== '' && state.trim().toLowerCase() !== 'maharashtra';
+                  const qty = Number(mReturnQty) || 0;
+                  const rate = Number(mRate) || 0;
+                  const disc = Number(mDisc) || 0;
                   const gVal = Number(mGst.replace('%', '')) || 0;
-                  const cPercent = isInter ? 0 : gVal / 2;
-                  const sPercent = isInter ? 0 : gVal / 2;
-                  const iPercent = isInter ? gVal : 0;
+                  
+                  const sub = qty * rate;
+                  const discAmt = (sub * disc) / 100;
+                  const taxAmt = sub - discAmt;
+                  const gstAmt = (taxAmt * gVal) / 100;
+                  const total = taxAmt + gstAmt;
                   
                   return (
-                    <View style={{flex: 2, flexDirection: 'row', gap: 6}}>
-                      <View style={{flex: 1, alignItems: 'center'}}>
-                        <Text style={[styles.inputLabel, {fontSize: 10, marginBottom: 4}]}>CGST</Text>
-                        <View style={{backgroundColor: '#f1f5f9', borderRadius: 8, height: 44, width: '100%', justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: '#e2e8f0'}}>
-                          <Text style={{fontWeight: '700', color: '#1e293b'}}>{cPercent}%</Text>
-                        </View>
+                    <View style={{marginTop: 20, backgroundColor: '#f8fafc', padding: 15, borderRadius: 12, borderWidth: 1, borderColor: '#f1f5f9'}}>
+                      <View style={{flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8}}>
+                        <Text style={{fontSize: 13, color: '#64748b', fontWeight: '600'}}>Subtotal:</Text>
+                        <Text style={{fontSize: 13, color: '#1e293b', fontWeight: '700'}}>₹{sub.toFixed(2)}</Text>
                       </View>
-                      <View style={{flex: 1, alignItems: 'center'}}>
-                        <Text style={[styles.inputLabel, {fontSize: 10, marginBottom: 4}]}>SGST</Text>
-                        <View style={{backgroundColor: '#f1f5f9', borderRadius: 8, height: 44, width: '100%', justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: '#e2e8f0'}}>
-                          <Text style={{fontWeight: '700', color: '#1e293b'}}>{sPercent}%</Text>
-                        </View>
+                      <View style={{flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8}}>
+                        <Text style={{fontSize: 13, color: '#64748b', fontWeight: '600'}}>Discount ({disc}%):</Text>
+                        <Text style={{fontSize: 13, color: '#22c55e', fontWeight: '700'}}>- ₹{discAmt.toFixed(2)}</Text>
                       </View>
-                      <View style={{flex: 1, alignItems: 'center'}}>
-                        <Text style={[styles.inputLabel, {fontSize: 10, marginBottom: 4}]}>IGST</Text>
-                        <View style={{backgroundColor: '#f1f5f9', borderRadius: 8, height: 44, width: '100%', justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: '#e2e8f0'}}>
-                          <Text style={{fontWeight: '700', color: '#1e293b'}}>{iPercent}%</Text>
-                        </View>
+                      <View style={{flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8}}>
+                        <Text style={{fontSize: 13, color: '#64748b', fontWeight: '600'}}>Taxable Amount:</Text>
+                        <Text style={{fontSize: 13, color: '#1e293b', fontWeight: '700'}}>₹{taxAmt.toFixed(2)}</Text>
+                      </View>
+                      <View style={{flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12}}>
+                        <Text style={{fontSize: 13, color: '#64748b', fontWeight: '600'}}>GST Amount:</Text>
+                        <Text style={{fontSize: 13, color: '#1e293b', fontWeight: '700'}}>₹{gstAmt.toFixed(2)}</Text>
+                      </View>
+                      <View style={{height: 1, backgroundColor: '#e2e8f0', marginBottom: 12}} />
+                      <View style={{flexDirection: 'row', justifyContent: 'space-between'}}>
+                        <Text style={{fontSize: 15, color: '#0f172a', fontWeight: '800'}}>Item Total:</Text>
+                        <Text style={{fontSize: 15, color: '#ea580c', fontWeight: '800'}}>₹{total.toFixed(2)}</Text>
                       </View>
                     </View>
                   );
                 })()}
-              </View>
 
-              {(() => {
-                const qty = Number(mReturnQty) || 0;
-                const rate = Number(mRate) || 0;
-                const disc = Number(mDisc) || 0;
-                const gVal = Number(mGst.replace('%', '')) || 0;
-                
-                const sub = qty * rate;
-                const discAmt = (sub * disc) / 100;
-                const taxAmt = sub - discAmt;
-                const gstAmt = (taxAmt * gVal) / 100;
-                const total = taxAmt + gstAmt;
-                
-                return (
-                  <View style={{marginTop: 20, backgroundColor: '#f8fafc', padding: 15, borderRadius: 12, borderWidth: 1, borderColor: '#f1f5f9'}}>
-                    <View style={{flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8}}>
-                      <Text style={{fontSize: 13, color: '#64748b', fontWeight: '600'}}>Subtotal:</Text>
-                      <Text style={{fontSize: 13, color: '#1e293b', fontWeight: '700'}}>₹{sub.toFixed(2)}</Text>
-                    </View>
-                    <View style={{flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8}}>
-                      <Text style={{fontSize: 13, color: '#64748b', fontWeight: '600'}}>Discount ({disc}%):</Text>
-                      <Text style={{fontSize: 13, color: '#22c55e', fontWeight: '700'}}>- ₹{discAmt.toFixed(2)}</Text>
-                    </View>
-                    <View style={{flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8}}>
-                      <Text style={{fontSize: 13, color: '#64748b', fontWeight: '600'}}>Taxable Amount:</Text>
-                      <Text style={{fontSize: 13, color: '#1e293b', fontWeight: '700'}}>₹{taxAmt.toFixed(2)}</Text>
-                    </View>
-                    <View style={{flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12}}>
-                      <Text style={{fontSize: 13, color: '#64748b', fontWeight: '600'}}>GST Amount:</Text>
-                      <Text style={{fontSize: 13, color: '#1e293b', fontWeight: '700'}}>₹{gstAmt.toFixed(2)}</Text>
-                    </View>
-                    <View style={{height: 1, backgroundColor: '#e2e8f0', marginBottom: 12}} />
-                    <View style={{flexDirection: 'row', justifyContent: 'space-between'}}>
-                      <Text style={{fontSize: 15, color: '#0f172a', fontWeight: '800'}}>Item Total:</Text>
-                      <Text style={{fontSize: 15, color: '#ea580c', fontWeight: '800'}}>₹{total.toFixed(2)}</Text>
-                    </View>
-                  </View>
-                );
-              })()}
-
-              <View style={{flexDirection: 'row', gap: 10, marginTop: 20}}>
-                <TouchableOpacity style={{flex: 1, backgroundColor: '#f1f5f9', padding: 12, borderRadius: 10, alignItems: 'center'}} onPress={() => setModalVisible(false)}>
-                  <Text style={{fontWeight: '700', color: '#64748b'}}>Cancel</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={{flex: 1.5, backgroundColor: '#ea7e30', padding: 12, borderRadius: 10, alignItems: 'center'}} onPress={handleSaveModalItem}>
-                  <Text style={{fontWeight: '800', color: '#fff'}}>Save</Text>
-                </TouchableOpacity>
-              </View>
+                <View style={{flexDirection: 'row', gap: 10, marginTop: 20}}>
+                  <TouchableOpacity style={{flex: 1, backgroundColor: '#f1f5f9', padding: 12, borderRadius: 10, alignItems: 'center'}} onPress={() => setModalVisible(false)}>
+                    <Text style={{fontWeight: '700', color: '#64748b'}}>Cancel</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity style={{flex: 1.5, backgroundColor: '#ea7e30', padding: 12, borderRadius: 10, alignItems: 'center'}} onPress={handleSaveModalItem}>
+                    <Text style={{fontWeight: '800', color: '#fff'}}>Save</Text>
+                  </TouchableOpacity>
+                </View>
+              </ScrollView>
             </View>
           </KeyboardAvoidingView>
         </View>

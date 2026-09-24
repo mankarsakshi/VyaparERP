@@ -1,4 +1,4 @@
-﻿import React, {useRef, useState, useEffect} from 'react';
+import React, {useRef, useState, useEffect} from 'react';
 import {
   View,
   Text,
@@ -117,6 +117,7 @@ const MENU_MODULES = [
       {title: 'Add Purchase', target: 'AddPurchase'},
       {title: 'All Purchases', target: 'AllPurchases'},
       {title: 'Debit Note', target: 'DebitNote'},
+      {title: 'Debit Note History', target: 'DebitNoteHistory'},
     ],
   },
   {

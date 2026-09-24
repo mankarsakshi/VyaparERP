@@ -37,6 +37,9 @@ type Product = {
 type Supplier = {
   id: string;
   name: string;
+  phone?: string;
+  state?: string;
+  city?: string;
 };
 
 type PurchaseItem = {
@@ -129,8 +132,27 @@ const formatTableNumber = (val: any): string => {
     return '0';
   }
 
-  return num % 1 === 0 ? num.toFixed(0) : num.toFixed(2);
+  return num % 1 === 0 ? String(num) : num.toFixed(2);
 };
+
+const BackArrowIcon = () => (
+  <View style={{width: 24, height: 24, justifyContent: 'center', alignItems: 'center'}}>
+    <View style={{position: 'absolute', width: 14, height: 2.6, backgroundColor: '#1e293b', borderRadius: 1.3}} />
+    <View
+      style={{
+        position: 'absolute',
+        left: 4,
+        width: 9,
+        height: 9,
+        borderLeftWidth: 2.6,
+        borderTopWidth: 2.6,
+        borderColor: '#1e293b',
+        borderRadius: 1.2,
+        transform: [{rotate: '-45deg'}],
+      }}
+    />
+  </View>
+);
 
 const PencilIcon = ({size = 14, color = '#ea7e30'}: {size?: number; color?: string}) => (
   <View style={{width: size, height: size, alignItems: 'center', justifyContent: 'center'}}>
@@ -264,6 +286,10 @@ const AddPurchaseScreen = ({navigation, route}: Props) => {
   const [supplierId, setSupplierId] = useState<
     string | number | null
   >(null);
+  const [supplierName, setSupplierName] = useState('');
+  const [supplierPhone, setSupplierPhone] = useState('');
+  const [supplierState, setSupplierState] = useState('');
+  const [supplierCity, setSupplierCity] = useState('');
 
   const [showSuppliers, setShowSuppliers] = useState(false);
 
@@ -374,6 +400,13 @@ const AddPurchaseScreen = ({navigation, route}: Props) => {
           item.supplier_name ??
           item.supplierName ??
           '',
+        phone:
+          item.phone ??
+          item.mobile ??
+          item.phone_number ??
+          '',
+        state: item.state ?? '',
+        city: item.city ?? item.district ?? '',
       }));
 
       setSuppliers(formatted);
@@ -488,6 +521,10 @@ const AddPurchaseScreen = ({navigation, route}: Props) => {
 
       setSupplier(suppName);
       setSupplierId(newSupp.id ?? null);
+      setSupplierName(suppName);
+      setSupplierPhone(newSupp.phone || newSupp.mobile || '');
+      setSupplierState(newSupp.state || '');
+      setSupplierCity(newSupp.city || '');
 
       setSuppliers(prev => {
         if (
@@ -953,6 +990,10 @@ const AddPurchaseScreen = ({navigation, route}: Props) => {
     setSupplier(
       String(supplierName),
     );
+    setSupplierName(String(supplierName));
+    setSupplierPhone(String(purchase.supplier_phone || purchase.phone || purchase.mobile || ''));
+    setSupplierState(String(purchase.supplier_state || purchase.state || ''));
+    setSupplierCity(String(purchase.supplier_city || purchase.city || ''));
 
     if (
       !dbSupplierId &&
@@ -1268,6 +1309,10 @@ const AddPurchaseScreen = ({navigation, route}: Props) => {
 
     setSupplier('');
     setSupplierId(null);
+    setSupplierName('');
+    setSupplierPhone('');
+    setSupplierState('');
+    setSupplierCity('');
 
     setShowSuppliers(false);
 
@@ -1643,13 +1688,22 @@ const AddPurchaseScreen = ({navigation, route}: Props) => {
             : undefined,
 
         supplier:
-          Supplier.trim(),
+          (supplierName || Supplier).trim(),
 
         Supplier:
-          Supplier.trim(),
+          (supplierName || Supplier).trim(),
 
         supplier_name:
-          Supplier.trim(),
+          (supplierName || Supplier).trim(),
+
+        supplier_phone:
+          supplierPhone.trim(),
+
+        supplier_state:
+          supplierState.trim(),
+
+        supplier_city:
+          supplierCity.trim(),
 
         invoice_number:
           finalInvoiceNo,
@@ -1871,370 +1925,225 @@ const AddPurchaseScreen = ({navigation, route}: Props) => {
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* HEADER */}
-
+      {/* 1. HEADER */}
       <View style={styles.header}>
         <TouchableOpacity
           style={styles.backButton}
           onPress={() => navigation.goBack()}
           activeOpacity={0.7}
           hitSlop={{top: 12, bottom: 12, left: 12, right: 12}}>
-          <View style={{width: 24, height: 24, justifyContent: 'center', alignItems: 'center'}}>
-            <View style={{position: 'absolute', width: 14, height: 2.6, backgroundColor: '#1e293b', borderRadius: 1.3}} />
-            <View style={{position: 'absolute', left: 4, width: 9, height: 9, borderLeftWidth: 2.6, borderTopWidth: 2.6, borderColor: '#1e293b', borderRadius: 1.2, transform: [{rotate: '-45deg'}]}} />
-          </View>
+          <BackArrowIcon />
         </TouchableOpacity>
 
-        <View style={{flex: 1, alignItems: 'center'}}>
+        <View style={styles.headerTitleArea}>
           <Text style={styles.headerTitle}>
             {isEditing ? 'Edit Purchase' : 'Add Purchase'}
           </Text>
         </View>
-        <View style={{width: 40}} />
       </View>
 
-      {/* BODY */}
-
+      {/* 2. BODY / SCROLL CONTENT */}
       <ScrollView
-        style={styles.scrollContent}
-        contentContainerStyle={
-          styles.scrollContentContainer
-        }
-        keyboardShouldPersistTaps="handled"
-        showsVerticalScrollIndicator={
-          false
-        }>
-        {/* PURCHASE INFORMATION */}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled">
+        {/* PURCHASE INFORMATION CARD */}
+        <View style={[styles.formCard, {zIndex: 5000}]}>
+          <Text style={styles.cardHeaderTitle}>Purchase Information</Text>
 
-        <View style={styles.formCard}>
-        <Text style={styles.sectionTitle}>
-          Purchase Information
-        </Text>
+          {/* BILL NUMBER & PURCHASE DATE ROW */}
+          <View style={styles.formRow}>
+            <View style={styles.formCol}>
+              <Text style={styles.inputLabel}>Bill Number</Text>
+              <TextInput
+                style={styles.formInput}
+                value={PurchaseNo}
+                onChangeText={setPurchaseNo}
+                placeholder="PUR-001"
+                placeholderTextColor="#94a3b8"
+              />
+            </View>
 
-        {/* BILL NUMBER + DATE */}
-
-        <View style={styles.row}>
-          <View style={styles.half}>
-            <Text
-              style={
-                styles.label
-              }>
-              Bill Number
-            </Text>
-
-            <TextInput
-              style={
-                styles.input
-              }
-              value={PurchaseNo}
-              onChangeText={
-                setPurchaseNo
-              }
-              placeholder="PUR-001"
-              placeholderTextColor="#d1d5db"
-            />
+            <View style={styles.formCol}>
+              <Text style={styles.inputLabel}>Purchase Date</Text>
+              <TouchableOpacity
+                style={styles.dateInputContainer}
+                onPress={() => setShowDatePicker(true)}
+                activeOpacity={0.7}>
+                <Text style={styles.dateInputText}>
+                  {PurchaseDate || getCurrentDate()}
+                </Text>
+                <Text style={styles.calendarIcon}>🗓</Text>
+              </TouchableOpacity>
+            </View>
           </View>
 
-          <View style={styles.half}>
-            <Text
-              style={
-                styles.label
-              }>
-              Purchase Date
-            </Text>
-
-            <TouchableOpacity
-              style={
-                styles.dateInputContainer
-              }
-              onPress={() =>
-                setShowDatePicker(
-                  true,
-                )
-              }
-              activeOpacity={0.7}>
-              <Text
-                style={
-                  styles.dateInputText
-                }>
-                {PurchaseDate ||
-                  getCurrentDate()}
-              </Text>
-
-              <Text
-                style={
-                  styles.calendarIcon
-                }>
-                🗓
-              </Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        {/* DATE PICKER */}
-
-        {showDatePicker && (
-          <DateTimePicker
-            value={selectedDate}
-            mode="date"
-            display={
-              Platform.OS === 'ios'
-                ? 'spinner'
-                : 'default'
-            }
-            onChange={(
-              event,
-              date,
-            ) => {
-              setShowDatePicker(
-                false,
-              );
-
-              if (date) {
-                setSelectedDate(
-                  date,
-                );
-
-                setPurchaseDate(
-                  formatDateForMySQL(
-                    date,
-                  ),
-                );
-              }
-            }}
-          />
-        )}
-
-        {/* SUPPLIER */}
-
-        <Text
-          style={
-            styles.label
-          }>
-          Supplier
-        </Text>
-
-        <View
-          style={
-            styles.supplierContainer
-          }>
-          <View
-            style={
-              styles.supplierInputWrapper
-            }>
-            <TextInput
-              style={
-                styles.supplierInput
-              }
-              placeholder="Select or enter Supplier"
-              placeholderTextColor="#d1d5db"
-              value={Supplier}
-              onFocus={() =>
-                setShowSuppliers(
-                  true,
-                )
-              }
-              onChangeText={text => {
-                setSupplier(text);
-                setSupplierId(null);
-                setShowSuppliers(
-                  true,
-                );
+          {showDatePicker && (
+            <DateTimePicker
+              value={selectedDate}
+              mode="date"
+              display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+              onChange={(event, date) => {
+                setShowDatePicker(false);
+                if (date) {
+                  setSelectedDate(date);
+                  setPurchaseDate(formatDateForMySQL(date));
+                }
               }}
             />
+          )}
+
+          {/* SUPPLIER */}
+          <Text style={styles.inputLabel}>Supplier *</Text>
+          <View style={styles.supplierContainer}>
+            <View style={styles.supplierInputWrapper}>
+              <TextInput
+                style={styles.supplierInput}
+                placeholder="Select or enter Supplier"
+                placeholderTextColor="#94a3b8"
+                value={Supplier}
+                onFocus={() => setShowSuppliers(true)}
+                onChangeText={text => {
+                  setSupplier(text);
+                  setSupplierName(text);
+                  setSupplierId(null);
+                  setShowSuppliers(true);
+                }}
+              />
+              <TouchableOpacity
+                onPress={() => setShowSuppliers(prev => !prev)}
+                style={styles.supplierArrowBtn}
+                hitSlop={{top: 10, bottom: 10, left: 10, right: 10}}>
+                <Text style={styles.dropdownArrow}>
+                  {showSuppliers ? '▲' : '▼'}
+                </Text>
+              </TouchableOpacity>
+            </View>
+
+            {showSuppliers && (
+              <View style={styles.supplierDropdown}>
+                <ScrollView nestedScrollEnabled keyboardShouldPersistTaps="handled" style={{maxHeight: 180}}>
+                  {suppliers
+                    .filter(item => {
+                      const q = Supplier.toLowerCase().trim();
+                      if (!q) return true;
+                      return item.name.toLowerCase().includes(q);
+                    })
+                    .map(item => (
+                      <TouchableOpacity
+                        key={`${item.id}-${item.name}`}
+                        style={styles.supplierItem}
+                        onPress={() => {
+                          setSupplier(item.name);
+                          setSupplierId(item.id);
+                          setSupplierName(item.name);
+                          setSupplierPhone(item.phone ?? '');
+                          setSupplierState(item.state ?? '');
+                          setSupplierCity(item.city ?? '');
+                          setShowSuppliers(false);
+                        }}>
+                        <Text style={styles.supplierText}>{item.name}</Text>
+                      </TouchableOpacity>
+                    ))}
+
+                  <TouchableOpacity
+                    style={styles.addSupplierItem}
+                    onPress={() => {
+                      setShowSuppliers(false);
+                      navigation.navigate('SupplierMaster', {
+                        openAddModal: true,
+                        returnTo: 'AddPurchase',
+                      });
+                    }}>
+                    <Text style={styles.addSupplierText}>+ Add Supplier</Text>
+                  </TouchableOpacity>
+                </ScrollView>
+              </View>
+            )}
+          </View>
+
+          {/* SUPPLIER DETAILS (SUPPLIER NAME, PHONE NO, STATE, CITY) */}
+          <View style={styles.formRow}>
+            <View style={styles.formCol}>
+              <Text style={styles.inputLabel}>Supplier Name</Text>
+              <TextInput
+                style={styles.formInput}
+                value={supplierName}
+                onChangeText={setSupplierName}
+                placeholder="Enter Supplier Name"
+                placeholderTextColor="#94a3b8"
+              />
+            </View>
+
+            <View style={styles.formCol}>
+              <Text style={styles.inputLabel}>Phone No.</Text>
+              <TextInput
+                style={styles.formInput}
+                value={supplierPhone}
+                onChangeText={setSupplierPhone}
+                placeholder="Enter Phone No."
+                placeholderTextColor="#94a3b8"
+                keyboardType="phone-pad"
+              />
+            </View>
+          </View>
+
+          <View style={styles.formRow}>
+            <View style={styles.formCol}>
+              <Text style={styles.inputLabel}>State</Text>
+              <TextInput
+                style={styles.formInput}
+                value={supplierState}
+                onChangeText={setSupplierState}
+                placeholder="Enter State"
+                placeholderTextColor="#94a3b8"
+              />
+            </View>
+
+            <View style={styles.formCol}>
+              <Text style={styles.inputLabel}>City</Text>
+              <TextInput
+                style={styles.formInput}
+                value={supplierCity}
+                onChangeText={setSupplierCity}
+                placeholder="Enter City"
+                placeholderTextColor="#94a3b8"
+              />
+            </View>
+          </View>
+
+          {/* INVOICE NUMBER */}
+          <Text style={styles.inputLabel}>Invoice Number</Text>
+          <TextInput
+            style={styles.formInput}
+            value={InvoiceNo}
+            onChangeText={setInvoiceNo}
+            placeholder="INV-001"
+            placeholderTextColor="#94a3b8"
+          />
+        </View>
+
+        {/* PRODUCT INFORMATION CARD */}
+        <View style={styles.formCard}>
+          <View style={styles.sectionHeaderRow}>
+            <View style={styles.sectionTitleWithBadge}>
+              <Text style={styles.cardHeaderTitle}>Product Information</Text>
+              <View style={styles.itemBadge}>
+                <Text style={styles.itemCountText}>
+                  {items.filter(item => !isItemBlank(item)).length}{' '}
+                  {items.filter(item => !isItemBlank(item)).length === 1 ? 'Item' : 'Items'}
+                </Text>
+              </View>
+            </View>
 
             <TouchableOpacity
-              onPress={() =>
-                setShowSuppliers(
-                  prev => !prev,
-                )
-              }
-              style={
-                styles.supplierArrowBtn
-              }
-              hitSlop={{
-                top: 10,
-                bottom: 10,
-                left: 10,
-                right: 10,
-              }}>
-              <Text
-                style={
-                  styles.dropdownArrow
-                }>
-                ▼
-              </Text>
+              style={styles.addBtn}
+              onPress={openAddModal}
+              activeOpacity={0.8}
+              accessibilityLabel="Add Item">
+              <Text style={styles.addBtnText}>+ Add Item</Text>
             </TouchableOpacity>
           </View>
-
-          {showSuppliers && (
-            <View
-              style={
-                styles.supplierDropdown
-              }>
-              <ScrollView
-                nestedScrollEnabled
-                keyboardShouldPersistTaps="handled">
-                {suppliers
-                  .filter(item => {
-                    const q =
-                      Supplier
-                        .toLowerCase()
-                        .trim();
-
-                    if (!q) {
-                      return true;
-                    }
-
-                    return item.name
-                      .toLowerCase()
-                      .includes(q);
-                  })
-                  .map(item => (
-                    <TouchableOpacity
-                      key={`${item.id}-${item.name}`}
-                      style={
-                        styles.supplierItem
-                      }
-                      onPress={() => {
-                        setSupplier(
-                          item.name,
-                        );
-
-                        setSupplierId(
-                          item.id,
-                        );
-
-                        setShowSuppliers(
-                          false,
-                        );
-                      }}>
-                      <Text
-                        style={
-                          styles.supplierText
-                        }>
-                        {item.name}
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
-
-                <TouchableOpacity
-                  style={
-                    styles.addSupplierItem
-                  }
-                  onPress={() => {
-                    setShowSuppliers(
-                      false,
-                    );
-
-                    navigation.navigate(
-                      'SupplierMaster',
-                      {
-                        openAddModal:
-                          true,
-                        returnTo:
-                          'AddPurchase',
-                      },
-                    );
-                  }}>
-                  <Text
-                    style={
-                      styles.addSupplierText
-                    }>
-                    + Add Supplier
-                  </Text>
-                </TouchableOpacity>
-              </ScrollView>
-            </View>
-          )}
-        </View>
-
-        {/* INVOICE NUMBER */}
-
-        <Text
-          style={
-            styles.label
-          }>
-          Invoice Number
-        </Text>
-
-        <TextInput
-          style={
-            styles.fullInput
-          }
-          value={InvoiceNo}
-          onChangeText={
-            setInvoiceNo
-          }
-          placeholder="INV-001"
-          placeholderTextColor="#d1d5db"
-        />
-
-        {/* PRODUCT INFORMATION */}
-
-        </View>
-
-        <View style={styles.formCard}>
-        <View
-          style={
-            styles.sectionHeaderRow
-          }>
-          <View
-            style={
-              styles.sectionTitleWithBadge
-            }>
-            <Text
-              style={
-                styles.sectionTitleNoMargin
-              }>
-              Product Information
-            </Text>
-
-            <View
-              style={
-                styles.itemBadge
-              }>
-              <Text
-                style={
-                  styles.itemCountText
-                }>
-                {
-                  items.filter(
-                    item =>
-                      !isItemBlank(
-                        item,
-                      ),
-                  ).length
-                }{' '}
-                {items.filter(
-                  item =>
-                    !isItemBlank(
-                      item,
-                    ),
-                ).length === 1
-                  ? 'Item'
-                  : 'Items'}
-              </Text>
-            </View>
-          </View>
-
-          <TouchableOpacity
-            style={
-              styles.addIconButton
-            }
-            onPress={
-              openAddModal
-            }
-            activeOpacity={0.8}
-            accessibilityLabel="Add Item">
-            <Text
-              style={
-                styles.plusIconText
-              }>
-              +
-            </Text>
-          </TouchableOpacity>
-        </View>
 
         {/* PRODUCT TABLE */}
 
@@ -2601,252 +2510,81 @@ const AddPurchaseScreen = ({navigation, route}: Props) => {
             />
           </View>
         </View>
-
-        {/* ================================================= */}
-        {/* PAYMENT */}
-        {/* ================================================= */}
-
         </View>
 
+        {/* PAYMENT & SUMMARY CARD */}
         <View style={styles.formCard}>
-        <Text
-          style={
-            styles.sectionTitle
-          }>
-          Payment
-        </Text>
+          <Text style={styles.cardHeaderTitle}>Payment Information</Text>
 
-        <View style={styles.row}>
-          {/* PAYMENT MODE */}
+          <View style={styles.formRow}>
+            {/* PAYMENT MODE */}
+            <View style={styles.formCol}>
+              <Text style={styles.inputLabel}>Payment Mode</Text>
+              <View style={styles.pickerContainer}>
+                <Picker
+                  selectedValue={PaymentMode}
+                  onValueChange={value => setPaymentMode(String(value))}
+                  style={styles.picker}
+                  mode="dropdown"
+                  dropdownIconColor="#64748b">
+                  <Picker.Item label="Card" value="Card" />
+                  <Picker.Item label="UPI" value="UPI" />
+                  <Picker.Item label="Cash" value="Cash" />
+                  <Picker.Item label="Credit" value="Credit" />
+                </Picker>
+              </View>
+            </View>
 
-          <View style={styles.half}>
-            <Text
-              style={
-                styles.label
-              }>
-              Payment Mode
-            </Text>
-
-            <View
-              style={
-                styles.pickerContainer
-              }>
-              <Picker
-                selectedValue={
-                  PaymentMode
-                }
-                onValueChange={value =>
-                  setPaymentMode(
-                    String(value),
-                  )
-                }
-                style={
-                  styles.picker
-                }
-                mode="dropdown"
-                dropdownIconColor="#64748b">
-                <Picker.Item
-                  label="Card"
-                  value="Card"
-                />
-
-                <Picker.Item
-                  label="UPI"
-                  value="UPI"
-                />
-
-                <Picker.Item
-                  label="Cash"
-                  value="Cash"
-                />
-
-                <Picker.Item
-                  label="Credit"
-                  value="Credit"
-                />
-              </Picker>
+            {/* PAYMENT STATUS */}
+            <View style={styles.formCol}>
+              <Text style={styles.inputLabel}>Payment Status</Text>
+              <View style={styles.pickerContainer}>
+                <Picker
+                  selectedValue={PaymentStatus}
+                  onValueChange={value => setPaymentStatus(String(value))}
+                  style={styles.picker}
+                  mode="dropdown"
+                  dropdownIconColor="#64748b">
+                  <Picker.Item label="Paid" value="Paid" />
+                  <Picker.Item label="Pending" value="Pending" />
+                  <Picker.Item label="Partial" value="Partial" />
+                </Picker>
+              </View>
             </View>
           </View>
 
-          {/* PAYMENT STATUS */}
+          <Text style={[styles.cardHeaderTitle, {marginTop: 18, marginBottom: 10}]}>
+            Purchase Summary
+          </Text>
 
-          <View style={styles.half}>
-            <Text
-              style={
-                styles.label
-              }>
-              Payment Status
-            </Text>
+          <View style={styles.summaryBox}>
+            <View style={styles.summaryRow}>
+              <Text style={styles.summaryLabel}>Subtotal</Text>
+              <Text style={styles.summaryValue}>₹ {formatCurrency(summary.subtotal)}</Text>
+            </View>
 
-            <View
-              style={
-                styles.pickerContainer
-              }>
-              <Picker
-                selectedValue={
-                  PaymentStatus
-                }
-                onValueChange={value =>
-                  setPaymentStatus(
-                    String(value),
-                  )
-                }
-                style={
-                  styles.picker
-                }
-                mode="dropdown"
-                dropdownIconColor="#64748b">
-                <Picker.Item
-                  label="Paid"
-                  value="Paid"
-                />
+            <View style={styles.summaryRow}>
+              <Text style={styles.summaryLabel}>Total Discount</Text>
+              <Text style={styles.discountValue}>- ₹ {formatCurrency(summary.discountAmount)}</Text>
+            </View>
 
-                <Picker.Item
-                  label="Pending"
-                  value="Pending"
-                />
+            <View style={styles.summaryRow}>
+              <Text style={styles.summaryLabel}>Taxable Amount</Text>
+              <Text style={styles.summaryValue}>₹ {formatCurrency(summary.taxableAmount)}</Text>
+            </View>
 
-                <Picker.Item
-                  label="Partial"
-                  value="Partial"
-                />
-              </Picker>
+            <View style={styles.summaryRow}>
+              <Text style={styles.summaryLabel}>Total GST</Text>
+              <Text style={styles.gstValue}>+ ₹ {formatCurrency(summary.gstAmount)}</Text>
+            </View>
+
+            <View style={styles.divider} />
+
+            <View style={styles.summaryRow}>
+              <Text style={styles.grandTotalLabel}>Grand Total</Text>
+              <Text style={styles.grandTotal}>₹ {formatCurrency(summary.grandTotal)}</Text>
             </View>
           </View>
-        </View>
-
-        {/* PURCHASE SUMMARY */}
-
-        <Text
-          style={
-            styles.sectionTitle
-          }>
-          Purchase Summary
-        </Text>
-
-        <View
-          style={
-            styles.summaryBox
-          }>
-          <View
-            style={
-              styles.summaryRow
-            }>
-            <Text
-              style={
-                styles.summaryLabel
-              }>
-              Subtotal
-            </Text>
-
-            <Text
-              style={
-                styles.summaryValue
-              }>
-              ₹{' '}
-              {formatCurrency(
-                summary.subtotal,
-              )}
-            </Text>
-          </View>
-
-          <View
-            style={
-              styles.summaryRow
-            }>
-            <Text
-              style={
-                styles.summaryLabel
-              }>
-              Total Discount
-            </Text>
-
-            <Text
-              style={
-                styles.discountValue
-              }>
-              - ₹{' '}
-              {formatCurrency(
-                summary.discountAmount,
-              )}
-            </Text>
-          </View>
-
-          <View
-            style={
-              styles.summaryRow
-            }>
-            <Text
-              style={
-                styles.summaryLabel
-              }>
-              Taxable Amount
-            </Text>
-
-            <Text
-              style={
-                styles.summaryValue
-              }>
-              ₹{' '}
-              {formatCurrency(
-                summary.taxableAmount,
-              )}
-            </Text>
-          </View>
-
-          <View
-            style={
-              styles.summaryRow
-            }>
-            <Text
-              style={
-                styles.summaryLabel
-              }>
-              Total GST
-            </Text>
-
-            <Text
-              style={
-                styles.gstValue
-              }>
-              + ₹{' '}
-              {formatCurrency(
-                summary.gstAmount,
-              )}
-            </Text>
-          </View>
-
-          <View
-            style={
-              styles.divider
-            }
-          />
-
-          <View
-            style={
-              styles.summaryRow
-            }>
-            <Text
-              style={
-                styles.grandTotalLabel
-              }>
-              Grand Total
-            </Text>
-
-            <Text
-              style={
-                styles.grandTotal
-              }>
-              ₹{' '}
-              {formatCurrency(
-                summary.grandTotal,
-              )}
-            </Text>
-          </View>
-        </View>
-
-        {/* SAVE BUTTON */}
-
         </View>
 
         <TouchableOpacity
@@ -3418,248 +3156,208 @@ const AddPurchaseScreen = ({navigation, route}: Props) => {
 // =====================================================
 
 const styles = StyleSheet.create({
-  formCard: {
-    backgroundColor: '#ffffff',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 16,
-    shadowColor: '#000',
-    shadowOffset: {width: 0, height: 1},
-    shadowOpacity: 0.05,
-    shadowRadius: 3,
-    elevation: 2,
-    borderWidth: 1,
-    borderColor: '#f1f5f9',
-  },
   container: {
     flex: 1,
     backgroundColor: '#f8fafc',
-  },
-
-  scrollContent: {
-    flex: 1,
-  },
-
-  scrollContentContainer: {
-    paddingBottom: 35,
   },
 
   loadingScreen: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#ffffff',
+    backgroundColor: '#f8fafc',
   },
 
   loadingText: {
     marginTop: 12,
     color: '#64748b',
     fontSize: 14,
+    fontWeight: '600',
   },
 
-  // ===================================================
   // HEADER
-  // ===================================================
-
-  
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 16,
-    paddingVertical: 14,
-    backgroundColor: '#ffffff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#f1f5f9',
+    paddingTop: Platform.OS === 'android' ? 28 : 22,
+    paddingBottom: 14,
   },
-  backButton: { padding: 4 }, headerTitleArea: {
-    flex: 1,
+  backButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    backgroundColor: '#ffffff',
+    justifyContent: 'center',
     alignItems: 'center',
+    marginRight: 14,
+    borderWidth: 1.5,
+    borderColor: '#e2e8f0',
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 2},
+    shadowOpacity: 0.06,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  headerTitleArea: {
+    flex: 1,
+    justifyContent: 'center',
   },
   headerTitle: {
-    fontSize: 18,
+    fontSize: 22,
+    fontWeight: '800',
+    color: '#0f172a',
+    letterSpacing: -0.2,
+  },
+
+  // SCROLL CONTENT
+  scrollContent: {
+    paddingHorizontal: 16,
+    paddingTop: 14,
+    paddingBottom: 35,
+  },
+
+  // FORM CARD
+  formCard: {
+    backgroundColor: '#ffffff',
+    borderRadius: 16,
+    padding: 16,
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 4},
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 3,
+    borderWidth: 1,
+    borderColor: '#f1f5f9',
+    marginBottom: 16,
+  },
+
+  cardHeaderTitle: {
+    fontSize: 16,
     fontWeight: '700',
     color: '#0f172a',
-    letterSpacing: 0.3,
-  },
-
-  // ===================================================
-  // SECTION HEADERS
-  // ===================================================
-
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#1e293b',
-    marginBottom: 16,
-    letterSpacing: 0.3,
-  },
-
-  sectionTitleNoMargin: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#ea6c08',
+    marginBottom: 4,
   },
 
   sectionHeaderRow: {
     flexDirection: 'row',
-    alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 10,
-    marginTop: 16,
-    marginBottom: 6,
+    alignItems: 'center',
+    marginBottom: 12,
   },
 
   sectionTitleWithBadge: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: 8,
   },
 
   itemBadge: {
     backgroundColor: '#fff7ed',
     paddingHorizontal: 8,
-    paddingVertical: 3,
+    paddingVertical: 2,
     borderRadius: 12,
-    marginLeft: 8,
+    borderWidth: 1,
+    borderColor: '#fed7aa',
   },
 
   itemCountText: {
     fontSize: 12,
-    color: '#ea6c08',
+    fontWeight: '700',
+    color: '#ea7e30',
+  },
+
+  addBtn: {
+    backgroundColor: '#ea7e30',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+  },
+
+  addBtnText: {
+    color: '#ffffff',
+    fontSize: 13,
     fontWeight: '700',
   },
 
-  addIconButton: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: '#ea6c08',
-    alignItems: 'center',
-    justifyContent: 'center',
-    elevation: 3,
-    shadowColor: '#ea6c08',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 3,
+  // FORM ROWS & COLS
+  formRow: {
+    flexDirection: 'row',
+    gap: 12,
   },
 
-  plusIconText: {
-    color: '#ffffff',
-    fontSize: 20,
-    fontWeight: 'bold',
-    lineHeight: 22,
-    textAlign: 'center',
+  formCol: {
+    flex: 1,
   },
 
-  // ===================================================
-  // LABELS & INPUTS
-  // ===================================================
-
-  label: {
+  // INPUT LABELS & FIELDS
+  inputLabel: {
     fontSize: 13,
     fontWeight: '600',
-    color: '#0f172a',
-    marginBottom: 5,
-    marginTop: 8,
-    marginHorizontal: 10,
+    color: '#475569',
+    marginBottom: 6,
+    marginTop: 10,
   },
 
-  fullInput: {
-    backgroundColor: '#ffffff',
-    borderWidth: 1,
-    borderColor: '#d1d5db',
-    borderRadius: 7,
-    paddingHorizontal: 12,
-    paddingVertical: 9,
-    fontSize: 14,
-    color: '#0f172a',
-    marginHorizontal: 10,
-    marginBottom: 3,
-    height: 42,
-  },
-
-  row: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingHorizontal: 6,
-  },
-
-  half: {
-    width: '49%',
-  },
-
-  input: {
+  formInput: {
+    height: 44,
+    backgroundColor: '#f8fafc',
+    borderRadius: 10,
     borderWidth: 1,
     borderColor: '#e2e8f0',
-    borderRadius: 8,
     paddingHorizontal: 12,
-    height: 46,
-    color: '#1e293b',
-    backgroundColor: '#ffffff',
     fontSize: 14,
+    color: '#1e293b',
   },
 
-  // ===================================================
-  // DATE
-  // ===================================================
-
+  // DATE INPUT
   dateInputContainer: {
-    backgroundColor: '#ffffff',
+    height: 44,
+    backgroundColor: '#f8fafc',
     borderWidth: 1,
-    borderColor: '#d1d5db',
-    borderRadius: 7,
-    marginHorizontal: 4,
-    marginBottom: 3,
+    borderColor: '#e2e8f0',
+    borderRadius: 10,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    height: 42,
     paddingHorizontal: 12,
   },
 
   dateInputText: {
     fontSize: 14,
-    color: '#0f172a',
+    color: '#1e293b',
   },
 
   calendarIcon: {
-    fontSize: 17,
+    fontSize: 16,
   },
 
-  // ===================================================
-  // SUPPLIER
-  // ===================================================
-
+  // SUPPLIER DROPDOWN
   supplierContainer: {
-    marginHorizontal: 10,
     position: 'relative',
     zIndex: 5000,
   },
 
   supplierInputWrapper: {
-    backgroundColor: '#ffffff',
+    height: 44,
+    backgroundColor: '#f8fafc',
     borderWidth: 1,
-    borderColor: '#d1d5db',
-    borderRadius: 7,
+    borderColor: '#e2e8f0',
+    borderRadius: 10,
     flexDirection: 'row',
     alignItems: 'center',
-    height: 42,
-    paddingHorizontal: 4,
   },
 
   supplierInput: {
     flex: 1,
-    paddingHorizontal: 8,
-    paddingVertical: 8,
+    paddingHorizontal: 12,
     fontSize: 14,
-    color: '#0f172a',
+    color: '#1e293b',
   },
 
   supplierArrowBtn: {
-    paddingHorizontal: 10,
-    paddingVertical: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
   },
 
   dropdownArrow: {
@@ -3669,45 +3367,44 @@ const styles = StyleSheet.create({
 
   supplierDropdown: {
     position: 'absolute',
-    top: 46,
+    top: 48,
     left: 0,
     right: 0,
-    maxHeight: 180,
+    maxHeight: 200,
     backgroundColor: '#ffffff',
     borderWidth: 1,
-    borderColor: '#d1d5db',
-    borderRadius: 7,
-    elevation: 10,
+    borderColor: '#e2e8f0',
+    borderRadius: 10,
+    elevation: 8,
     shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.15,
-    shadowRadius: 6,
+    shadowOffset: {width: 0, height: 4},
+    shadowOpacity: 0.12,
+    shadowRadius: 8,
     zIndex: 5000,
+    overflow: 'hidden',
   },
 
   supplierItem: {
-    paddingVertical: 10,
-    paddingHorizontal: 12,
+    paddingVertical: 11,
+    paddingHorizontal: 14,
     borderBottomWidth: 1,
-    borderBottomColor: '#f9fafb',
+    borderBottomColor: '#f1f5f9',
   },
 
   supplierText: {
     fontSize: 14,
     color: '#334155',
+    fontWeight: '500',
   },
 
   addSupplierItem: {
-    paddingVertical: 10,
-    paddingHorizontal: 12,
+    paddingVertical: 11,
+    paddingHorizontal: 14,
     backgroundColor: '#fff7ed',
   },
 
   addSupplierText: {
-    color: '#ea6c08',
+    color: '#ea7e30',
     fontWeight: '700',
     fontSize: 14,
   },
@@ -3717,26 +3414,23 @@ const styles = StyleSheet.create({
   // ===================================================
 
   tableCardContainer: {
-    marginHorizontal: 10,
+    backgroundColor: '#ffffff',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+    overflow: 'hidden',
     marginTop: 6,
     marginBottom: 10,
-    backgroundColor: '#ffffff',
-    borderRadius: 10,
-    shadowColor: '#000000',
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.12,
-    shadowRadius: 6,
-    elevation: 4,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 2},
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
   },
 
   tableCard: {
     backgroundColor: '#ffffff',
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: '#d1d5db',
+    borderRadius: 12,
     overflow: 'hidden',
   },
 
@@ -3744,7 +3438,7 @@ const styles = StyleSheet.create({
     height: 4,
     width: '100%',
     backgroundColor: '#000000',
-    opacity: 0.08,
+    opacity: 0.04,
     borderTopWidth: 1,
     borderTopColor: '#e2e8f0',
   },
@@ -3756,9 +3450,9 @@ const styles = StyleSheet.create({
   tableHeaderRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#ffffff',
-    borderBottomWidth: 1.5,
-    borderBottomColor: '#d1d5db',
+    backgroundColor: '#f8fafc',
+    borderBottomWidth: 1,
+    borderBottomColor: '#e2e8f0',
     paddingVertical: 10,
   },
 
@@ -3766,8 +3460,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     borderBottomWidth: 1,
-    borderBottomColor: '#d1d5db',
-    minHeight: 42,
+    borderBottomColor: '#f1f5f9',
+    minHeight: 44,
   },
 
   tableRowTouchableContent: {
@@ -3781,7 +3475,7 @@ const styles = StyleSheet.create({
   },
 
   rowOdd: {
-    backgroundColor: '#ffffff',
+    backgroundColor: '#f8fafc',
   },
 
   blankRow: {
@@ -3793,9 +3487,10 @@ const styles = StyleSheet.create({
   },
 
   thText: {
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '700',
-    color: '#334155',
+    color: '#475569',
+    textTransform: 'uppercase',
   },
 
   textCenter: {
@@ -3883,8 +3578,8 @@ const styles = StyleSheet.create({
   },
 
   cellMuted: {
-    color: '#334155',
-    fontWeight: '600',
+    color: '#64748b',
+    fontWeight: '500',
   },
 
   // ===================================================
@@ -3899,14 +3594,14 @@ const styles = StyleSheet.create({
   },
 
   editActionBtn: {
-    width: 26,
-    height: 26,
-    borderRadius: 5,
+    width: 28,
+    height: 28,
+    borderRadius: 6,
     backgroundColor: '#fff7ed',
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: '#FCE0D0',
+    borderColor: '#fed7aa',
   },
 
   editIconText: {
@@ -3914,9 +3609,9 @@ const styles = StyleSheet.create({
   },
 
   deleteActionBtn: {
-    width: 26,
-    height: 26,
-    borderRadius: 5,
+    width: 28,
+    height: 28,
+    borderRadius: 6,
     backgroundColor: '#fef2f2',
     alignItems: 'center',
     justifyContent: 'center',
@@ -3941,38 +3636,20 @@ const styles = StyleSheet.create({
   // PAYMENT PICKERS
   // ===================================================
 
-//   /*
-//    * UPDATED:
-//    * Increased height from 42 to 48.
-//    * This prevents Android Picker text from being
-//    * vertically clipped.
-//    */
-
   pickerContainer: {
-    backgroundColor: '#ffffff',
+    backgroundColor: '#f8fafc',
     borderWidth: 1,
-    borderColor: '#d1d5db',
-    borderRadius: 7,
-    marginHorizontal: 4,
-    marginBottom: 3,
-
-    height: 48,
-
+    borderColor: '#e2e8f0',
+    borderRadius: 10,
+    height: 44,
     justifyContent: 'center',
-
-    // Prevent Android native Picker content
-    // from being clipped.
-    overflow: 'visible',
-
-    elevation: 0,
+    overflow: 'hidden',
   },
 
   picker: {
-    height: 48,
+    height: 44,
     width: '100%',
     color: '#0f172a',
-
-    // Keep the native text vertically centered.
     paddingVertical: 0,
   },
 
@@ -3982,19 +3659,16 @@ const styles = StyleSheet.create({
 
   summaryBox: {
     backgroundColor: '#ffffff',
-    marginHorizontal: 10,
-    padding: 14,
-    borderRadius: 8,
+    borderRadius: 16,
+    padding: 16,
     borderWidth: 1,
-    borderColor: '#e2e8f0',
-    elevation: 2,
+    borderColor: '#f1f5f9',
+    elevation: 3,
     shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 1,
-    },
-    shadowOpacity: 0.08,
-    shadowRadius: 3,
+    shadowOffset: {width: 0, height: 4},
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    marginBottom: 16,
   },
 
   summaryRow: {
@@ -4031,7 +3705,7 @@ const styles = StyleSheet.create({
   divider: {
     height: 1,
     backgroundColor: '#e2e8f0',
-    marginVertical: 8,
+    marginVertical: 10,
   },
 
   grandTotalLabel: {
@@ -4043,7 +3717,7 @@ const styles = StyleSheet.create({
   grandTotal: {
     fontSize: 18,
     fontWeight: '800',
-    color: '#ea6c08',
+    color: '#ea7e30',
   },
 
   // ===================================================
@@ -4051,21 +3725,18 @@ const styles = StyleSheet.create({
   // ===================================================
 
   saveButton: {
-    backgroundColor: '#ea6c08',
-    marginHorizontal: 10,
-    marginTop: 18,
-    marginBottom: 25,
-    paddingVertical: 13,
-    borderRadius: 8,
+    backgroundColor: '#ea7e30',
+    height: 48,
+    borderRadius: 12,
     alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 8,
+    marginBottom: 30,
     elevation: 3,
-    shadowColor: '#ea6c08',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
+    shadowColor: '#ea7e30',
+    shadowOffset: {width: 0, height: 3},
+    shadowOpacity: 0.2,
+    shadowRadius: 6,
   },
 
   saveButtonText: {
@@ -4080,8 +3751,7 @@ const styles = StyleSheet.create({
 
   modalOverlay: {
     flex: 1,
-    backgroundColor:
-      'rgba(15, 23, 42, 0.6)',
+    backgroundColor: 'rgba(15, 23, 42, 0.6)',
     justifyContent: 'center',
     alignItems: 'center',
     padding: 16,
@@ -4094,38 +3764,25 @@ const styles = StyleSheet.create({
 
   modalContent: {
     backgroundColor: '#ffffff',
-    borderRadius: 12,
+    borderRadius: 16,
     overflow: 'hidden',
     maxHeight: '90%',
     elevation: 10,
     shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
+    shadowOffset: {width: 0, height: 4},
     shadowOpacity: 0.25,
     shadowRadius: 8,
   },
 
-  
   modalHeader: {
-    backgroundColor: '#C86A34',
-    paddingHorizontal: 16,
+    backgroundColor: '#ea7e30',
+    paddingHorizontal: 18,
     paddingVertical: 14,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
   },
-//     shadowOpacity: 0.05,
-//     shadowRadius: 3,
-//     flexDirection: 'row',
-//     justifyContent: 'space-between',
-//     alignItems: 'center',
-//     paddingVertical: 14,
-//     paddingHorizontal: 16,
-//   },
 
-  
   modalTitle: {
     color: '#ffffff',
     fontSize: 17,
@@ -4136,7 +3793,6 @@ const styles = StyleSheet.create({
     padding: 4,
   },
 
-  
   modalCloseText: {
     color: '#ffffff',
     fontSize: 18,
@@ -4156,12 +3812,12 @@ const styles = StyleSheet.create({
   },
 
   modalInput: {
-    backgroundColor: '#ffffff',
+    backgroundColor: '#f8fafc',
     borderWidth: 1,
-    borderColor: '#d1d5db',
-    borderRadius: 6,
-    paddingHorizontal: 10,
-    paddingVertical: 8,
+    borderColor: '#e2e8f0',
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    height: 44,
     fontSize: 14,
     color: '#0f172a',
   },
@@ -4173,23 +3829,27 @@ const styles = StyleSheet.create({
 
   modalDropdown: {
     position: 'absolute',
-    top: 45,
+    top: 48,
     left: 0,
     right: 0,
     maxHeight: 160,
     backgroundColor: '#ffffff',
     borderWidth: 1,
-    borderColor: '#d1d5db',
-    borderRadius: 6,
+    borderColor: '#e2e8f0',
+    borderRadius: 10,
     elevation: 8,
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 4},
+    shadowOpacity: 0.12,
+    shadowRadius: 8,
     zIndex: 3000,
   },
 
   modalDropdownItem: {
-    paddingVertical: 9,
+    paddingVertical: 10,
     paddingHorizontal: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#f9fafb',
+    borderBottomColor: '#f1f5f9',
   },
 
   modalDropdownText: {
@@ -4226,27 +3886,27 @@ const styles = StyleSheet.create({
   },
 
   modalTotalPreviewBox: {
-    backgroundColor: '#ffffff',
+    backgroundColor: '#f8fafc',
     borderWidth: 1,
     borderColor: '#e2e8f0',
-    borderRadius: 6,
-    height: 40,
+    borderRadius: 10,
+    height: 44,
     justifyContent: 'center',
-    paddingHorizontal: 10,
+    paddingHorizontal: 12,
   },
 
   modalTotalPreviewValue: {
     fontSize: 14,
     fontWeight: '700',
-    color: '#ea6c08',
+    color: '#ea7e30',
   },
 
   modalCalcCard: {
-    backgroundColor: '#ffffff',
-    borderRadius: 8,
+    backgroundColor: '#f8fafc',
+    borderRadius: 12,
     borderWidth: 1,
     borderColor: '#e2e8f0',
-    padding: 12,
+    padding: 14,
     marginTop: 14,
     marginBottom: 6,
   },
@@ -4258,24 +3918,24 @@ const styles = StyleSheet.create({
   },
 
   modalCalcLabel: {
-    fontSize: 12.5,
+    fontSize: 13,
     color: '#64748b',
   },
 
   modalCalcVal: {
-    fontSize: 12.5,
+    fontSize: 13,
     fontWeight: '600',
     color: '#334155',
   },
 
   modalCalcDiscount: {
-    fontSize: 12.5,
+    fontSize: 13,
     fontWeight: '600',
     color: '#dc2626',
   },
 
   modalCalcGst: {
-    fontSize: 12.5,
+    fontSize: 13,
     fontWeight: '600',
     color: '#16a34a',
   },
@@ -4283,55 +3943,56 @@ const styles = StyleSheet.create({
   modalCalcTotalRow: {
     borderTopWidth: 1,
     borderTopColor: '#e2e8f0',
-    paddingTop: 6,
+    paddingTop: 8,
     marginTop: 6,
   },
 
   modalCalcTotalLabel: {
-    fontSize: 13.5,
+    fontSize: 14,
     fontWeight: '700',
     color: '#0f172a',
   },
 
   modalCalcTotalVal: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '800',
-    color: '#ea6c08',
+    color: '#ea7e30',
   },
 
   modalFooter: {
     flexDirection: 'row',
     justifyContent: 'flex-end',
-    padding: 12,
+    padding: 14,
     borderTopWidth: 1,
-    borderTopColor: '#f9fafb',
+    borderTopColor: '#f1f5f9',
     backgroundColor: '#ffffff',
     gap: 10,
   },
 
   modalCancelBtn: {
-    paddingVertical: 8,
+    paddingVertical: 10,
     paddingHorizontal: 16,
-    borderRadius: 6,
+    borderRadius: 10,
     borderWidth: 1,
-    borderColor: '#d1d5db',
+    borderColor: '#cbd5e1',
+    backgroundColor: '#ffffff',
   },
 
   modalCancelText: {
-    fontSize: 13.5,
+    fontSize: 14,
     fontWeight: '600',
     color: '#475569',
   },
 
   modalSaveBtn: {
-    backgroundColor: '#ea6c08',
-    paddingVertical: 8,
-    paddingHorizontal: 18,
-    borderRadius: 6,
+    backgroundColor: '#ea7e30',
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 10,
   },
 
   modalSaveText: {
-    fontSize: 13.5,
+    fontSize: 14,
     fontWeight: '700',
     color: '#ffffff',
   },

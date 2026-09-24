@@ -151,9 +151,6 @@ const CreditNoteScreen = ({ navigation }: any) => {
   const [showAdjustment, setShowAdjustment] = useState(false);
   const ADJUSTMENTS = ['Customer Credit', 'Refund', 'Adjust Against Invoice'];
 
-  const [paymentStatus, setPaymentStatus] = useState('Pending');
-  const [showPaymentStatus, setShowPaymentStatus] = useState(false);
-  const PAYMENT_STATUSES = ['Pending', 'Partially Paid', 'Paid'];
   
   const [notes, setNotes] = useState('Product returned due to quality issue...');
 
@@ -708,30 +705,7 @@ const CreditNoteScreen = ({ navigation }: any) => {
               )}
             </View>
 
-            <Text style={styles.inputLabel}>Payment Status</Text>
-            <View style={[styles.dropdownContainer, { zIndex: 10 }]}>
-              <TouchableOpacity style={styles.dropdown} onPress={() => setShowPaymentStatus(!showPaymentStatus)}>
-                <Text style={styles.dropdownText}>{paymentStatus}</Text>
-                <Text style={styles.arrow}>{showPaymentStatus ? '▲' : '▼'}</Text>
-              </TouchableOpacity>
-              {showPaymentStatus && (
-                <View style={styles.dropdownMenu}>
-                  <ScrollView nestedScrollEnabled keyboardShouldPersistTaps="handled" style={{maxHeight: 150}}>
-                    {PAYMENT_STATUSES.map((status, index) => (
-                      <TouchableOpacity
-                        key={index}
-                        style={styles.dropdownMenuItem}
-                        onPress={() => {
-                          setPaymentStatus(status);
-                          setShowPaymentStatus(false);
-                        }}>
-                        <Text style={styles.dropdownMainText}>{status}</Text>
-                      </TouchableOpacity>
-                    ))}
-                  </ScrollView>
-                </View>
-              )}
-            </View>
+
           </View>
 
           {/* NOTES */}
