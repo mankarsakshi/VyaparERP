@@ -62,6 +62,8 @@ import CreditNoteScreen from '../screens/CreditNoteScreen';
 import CreditNoteHistoryScreen from '../screens/CreditNoteHistoryScreen';
 import DebitNoteScreen from '../screens/DebitNoteScreen';
 import DebitNoteHistoryScreen from '../screens/DebitNoteHistoryScreen';
+import PaymentPaidScreen from '../screens/PaymentPaidScreen';
+import PaymentPaidHistoryScreen from '../screens/PaymentPaidHistoryScreen';
 import { Screen } from 'react-native-screens';
 
 const Stack =
@@ -432,6 +434,22 @@ const AppNavigator = () => {
         <Stack.Screen
           name="DebitNoteHistory"
           component={DebitNoteHistoryScreen}
+        />
+        <Stack.Screen
+          name="PaymentPaid"
+          component={PaymentPaidScreen}
+        />
+        <Stack.Screen
+          name="Payment Paid"
+          component={PaymentPaidScreen}
+        />
+        <Stack.Screen
+          name="PaymentPaidHistory"
+          component={PaymentPaidHistoryScreen}
+        />
+        <Stack.Screen
+          name="Payment Paid History"
+          component={PaymentPaidHistoryScreen}
         />
       </Stack.Navigator>
     

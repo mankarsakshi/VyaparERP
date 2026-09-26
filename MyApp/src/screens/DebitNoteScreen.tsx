@@ -11,8 +11,10 @@ import {
   Platform,
   ActivityIndicator,
   Modal,
+  Alert,
 } from 'react-native';
 import { API_BASE_URL } from '../api/config';
+import { addDebitNoteRecord, DebitNoteRecord, ProductLineItem } from '../utils/debitNoteStore';
 
 const BackArrowIcon = () => (
   <View style={{width: 24, height: 24, justifyContent: 'center', alignItems: 'center'}}>
@@ -68,7 +70,7 @@ type ProductItem = {
   reason?: string;
 };
 
-const DebitNoteScreen = ({ navigation }: any) => {
+const DebitNoteScreen = ({ navigation, route }: any) => {
   // Debit Note Information State
   const [debitNoteNo, setDebitNoteNo] = useState('DN-001');
   const [date, setDate] = useState('23-09-2026');
@@ -332,6 +334,136 @@ const DebitNoteScreen = ({ navigation }: any) => {
       isInterState,
       breakdown,
     };
+  };
+
+  useEffect(() => {
+    const existing = route?.params?.debitNote;
+    if (existing) {
+      if (existing.billNo) setDebitNoteNo(existing.billNo);
+      if (existing.billDate) setDate(existing.billDate);
+      if (existing.invoiceNo) setInvoiceNo(existing.invoiceNo);
+      if (existing.invoiceDate) setInvoiceDate(existing.invoiceDate);
+      if (existing.supplierName) {
+        setSupplier(existing.supplierName);
+        setSupplierName(existing.supplierName);
+      }
+      if (existing.phone) setPhone(existing.phone);
+      if (existing.state) setState(existing.state);
+      if (existing.city) setCity(existing.city);
+      if (existing.adjustmentType) setAdjustmentType(existing.adjustmentType);
+      if (existing.items && existing.items.length > 0) {
+        const mapped: ProductItem[] = existing.items.map((i: any) => ({
+          product: i.product || '',
+          batchNo: i.batchNo || '',
+          hsn: i.hsn || '',
+          sold: String(i.sold || 0),
+          returnQty: String(i.returnQty || 1),
+          rate: String(i.rate || 0),
+          disc: String(i.disc || 0),
+          gst: String(i.gst || 18),
+          amt: String(i.totalAmt || 0),
+          reason: i.reason || '',
+        }));
+        while (mapped.length < 5) mapped.push(emptyItem());
+        setItems(mapped);
+      }
+    }
+  }, [route?.params?.debitNote]);
+
+  const handleSaveDebitNote = async () => {
+    try {
+      const summary = calculateSummary();
+      const activeItems = items.filter(i => i.product.trim().length > 0);
+      
+      const formattedLineItems: ProductLineItem[] = activeItems.map(i => {
+        const returnQty = Number(i.returnQty) || 1;
+        const rate = Number(i.rate) || 0;
+        const disc = Number(i.disc) || 0;
+        const gst = Number((i.gst || '').replace('%', '')) || 0;
+        const itemSub = returnQty * rate;
+        const itemDisc = (itemSub * disc) / 100;
+        const itemTax = itemSub - itemDisc;
+        const itemGst = (itemTax * gst) / 100;
+        const isInter = state.trim() !== '' && state.trim().toLowerCase() !== 'maharashtra';
+
+        return {
+          product: i.product,
+          batchNo: i.batchNo || 'BATCH-101',
+          reason: i.reason || 'Purchase Return',
+          sold: Number(i.sold) || 0,
+          returnQty,
+          rate,
+          disc,
+          gst,
+          hsn: i.hsn || '8471',
+          taxableAmt: itemTax,
+          cgstAmt: isInter ? 0 : itemGst / 2,
+          sgstAmt: isInter ? 0 : itemGst / 2,
+          igstAmt: isInter ? itemGst : 0,
+          totalAmt: itemTax + itemGst,
+        };
+      });
+
+      if (formattedLineItems.length === 0) {
+        const tot = Number(summary.debitNoteTotal) || 0;
+        const tax = Number(summary.taxableAmount) || tot;
+        const gstTot = tot - tax;
+        const isInter = state.trim() !== '' && state.trim().toLowerCase() !== 'maharashtra';
+        formattedLineItems.push({
+          product: supplierName || supplier ? `${supplierName || supplier} Item` : 'Returned Item',
+          batchNo: 'BATCH-101',
+          reason: 'Purchase Return',
+          sold: 1,
+          returnQty: 1,
+          rate: tax > 0 ? tax : 1000,
+          disc: 0,
+          gst: 18,
+          hsn: '8471',
+          taxableAmt: tax > 0 ? tax : 1000,
+          cgstAmt: isInter ? 0 : (gstTot > 0 ? gstTot / 2 : 90),
+          sgstAmt: isInter ? 0 : (gstTot > 0 ? gstTot / 2 : 90),
+          igstAmt: isInter ? (gstTot > 0 ? gstTot : 180) : 0,
+          totalAmt: tot > 0 ? tot : 1180,
+        });
+      }
+
+      const editTarget = route?.params?.debitNote;
+      const finalBillNo = debitNoteNo.trim() ? debitNoteNo : `DN-${Math.floor(100 + Math.random() * 900)}`;
+
+      const newRecord: DebitNoteRecord = {
+        id: editTarget?.id || String(Date.now()),
+        billNo: finalBillNo,
+        billDate: date || new Date().toLocaleDateString('en-GB'),
+        invoiceNo: invoiceNo || 'INV-1025',
+        invoiceDate: invoiceDate || date || '20-09-2026',
+        supplierName: supplierName || supplier || 'Default Supplier',
+        phone: phone || '9823012345',
+        state: state || 'Maharashtra',
+        city: city || address || pincode || 'Pune',
+        defaultGstRate: defaultGstRate || '18%',
+        taxType: (!state || state.trim().toLowerCase() === 'maharashtra') ? 'CGST + SGST (Intra-state)' : 'IGST (Inter-state)',
+        subtotal: Number(summary.subtotal) || formattedLineItems.reduce((a, b) => a + b.rate * b.returnQty, 0),
+        discount: Number(summary.discount) || 0,
+        taxableAmount: Number(summary.taxableAmount) || formattedLineItems.reduce((a, b) => a + b.taxableAmt, 0),
+        cgst: Number(summary.cgst) || formattedLineItems.reduce((a, b) => a + b.cgstAmt, 0),
+        sgst: Number(summary.sgst) || formattedLineItems.reduce((a, b) => a + b.sgstAmt, 0),
+        igst: Number(summary.igst) || formattedLineItems.reduce((a, b) => a + b.igstAmt, 0),
+        debitNoteTotal: Number(summary.debitNoteTotal) || formattedLineItems.reduce((a, b) => a + b.totalAmt, 0),
+        adjustmentType: adjustmentType || 'Adjust Against Invoice',
+        items: formattedLineItems,
+      };
+
+      await addDebitNoteRecord(newRecord);
+      Alert.alert('Success', `Debit Note ${newRecord.billNo} saved successfully!`, [
+        {
+          text: 'OK',
+          onPress: () => navigation.goBack(),
+        },
+      ]);
+    } catch (err: any) {
+      console.error('Error saving debit note:', err);
+      Alert.alert('Error', 'Failed to save debit note.');
+    }
   };
 
   const summary = calculateSummary();
@@ -717,7 +849,7 @@ const DebitNoteScreen = ({ navigation }: any) => {
             <TouchableOpacity style={styles.cancelBtn} onPress={() => navigation.goBack()}>
               <Text style={styles.cancelBtnText}>Cancel</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.saveBtn} onPress={() => navigation.goBack()}>
+            <TouchableOpacity style={styles.saveBtn} onPress={handleSaveDebitNote}>
               <Text style={styles.saveBtnText}>Save Debit Note</Text>
             </TouchableOpacity>
           </View>

@@ -118,6 +118,8 @@ const MENU_MODULES = [
       {title: 'All Purchases', target: 'AllPurchases'},
       {title: 'Debit Note', target: 'DebitNote'},
       {title: 'Debit Note History', target: 'DebitNoteHistory'},
+      {title: 'Payment Paid', target: 'PaymentPaid'},
+      {title: 'Payment Paid History', target: 'PaymentPaidHistory'},
     ],
   },
   {

@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useState, useEffect} from 'react';
 import {
   View,
   Text,
@@ -12,6 +12,12 @@ import {
   Alert,
 } from 'react-native';
 import {generatePurePDF, saveFileToDevice} from '../utils/exportHelper';
+import {
+  loadDebitNotes,
+  deleteDebitNoteRecord,
+  DebitNoteRecord,
+  ProductLineItem,
+} from '../utils/debitNoteStore';
 
 type Props = {
   navigation: any;
@@ -46,46 +52,6 @@ const numberToWords = (num: number) => {
   }
   return result + ' Only';
 };
-
-export interface ProductLineItem {
-  product: string;
-  batchNo?: string;
-  reason?: string;
-  sold?: number;
-  returnQty: number;
-  rate: number;
-  disc: number;
-  gst?: number;
-  hsn: string;
-  taxableAmt: number;
-  cgstAmt: number;
-  sgstAmt: number;
-  igstAmt: number;
-  totalAmt: number;
-}
-
-export interface DebitNoteRecord {
-  id: string;
-  billNo: string;
-  billDate: string;
-  invoiceNo: string;
-  invoiceDate: string;
-  supplierName: string;
-  phone: string;
-  state: string;
-  city: string;
-  defaultGstRate: string;
-  taxType: string;
-  subtotal: number;
-  discount: number;
-  taxableAmount: number;
-  cgst: number;
-  sgst: number;
-  igst: number;
-  debitNoteTotal: number;
-  adjustmentType: string;
-  items: ProductLineItem[];
-}
 
 const BackArrowIcon = () => (
   <View style={{width: 24, height: 24, justifyContent: 'center', alignItems: 'center'}}>
@@ -383,12 +349,30 @@ const INITIAL_DEBIT_NOTES: DebitNoteRecord[] = [
 const ITEMS_PER_PAGE = 10;
 
 const DebitNoteHistoryScreen = ({navigation}: Props) => {
-  const [notes, setNotes] = useState<DebitNoteRecord[]>(INITIAL_DEBIT_NOTES);
+  const [notes, setNotes] = useState<DebitNoteRecord[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedNote, setSelectedNote] = useState<DebitNoteRecord | null>(null);
   const [modalVisible, setModalVisible] = useState(false);
   const [downloadMenuVisible, setDownloadMenuVisible] = useState(false);
+
+  useEffect(() => {
+    let isMounted = true;
+    const fetchNotes = async () => {
+      const data = await loadDebitNotes();
+      if (isMounted) {
+        setNotes([...data]);
+      }
+    };
+    fetchNotes();
+    const unsubscribe = navigation.addListener('focus', () => {
+      fetchNotes();
+    });
+    return () => {
+      isMounted = false;
+      unsubscribe();
+    };
+  }, [navigation]);
 
   const filteredNotes = notes.filter(dn => {
     const q = searchQuery.toLowerCase().trim();
@@ -421,8 +405,9 @@ const DebitNoteHistoryScreen = ({navigation}: Props) => {
         {
           text: 'Delete',
           style: 'destructive',
-          onPress: () => {
-            setNotes(prev => prev.filter(n => n.id !== id));
+          onPress: async () => {
+            const updated = await deleteDebitNoteRecord(id);
+            setNotes([...updated]);
           },
         },
       ],

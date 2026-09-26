@@ -11,8 +11,10 @@ import {
   Platform,
   ActivityIndicator,
   Modal,
+  Alert,
 } from 'react-native';
 import { API_BASE_URL } from '../api/config';
+import { addCreditNoteRecord, CreditNoteRecord, ProductLineItem } from '../utils/creditNoteStore';
 
 const BackArrowIcon = () => (
   <View style={{width: 24, height: 24, justifyContent: 'center', alignItems: 'center'}}>
@@ -57,7 +59,7 @@ type Customer = {
   pincode?: string;
 };
 
-const CreditNoteScreen = ({ navigation }: any) => {
+const CreditNoteScreen = ({ navigation, route }: any) => {
   const [creditNoteNo, setCreditNoteNo] = useState('CN-001');
   const [date, setDate] = useState('22-09-2026');
   const [reason, setReason] = useState('');
@@ -314,6 +316,136 @@ const CreditNoteScreen = ({ navigation }: any) => {
       totalCreditAmount: totalCreditAmount.toFixed(2),
       breakdown
     };
+  };
+
+  useEffect(() => {
+    const existing = route?.params?.creditNote;
+    if (existing) {
+      if (existing.billNo) setCreditNoteNo(existing.billNo);
+      if (existing.billDate) setDate(existing.billDate);
+      if (existing.invoiceNo) setInvoice(existing.invoiceNo);
+      if (existing.invoiceDate) setInvoiceDate(existing.invoiceDate);
+      if (existing.customerName) {
+        setCustomer(existing.customerName);
+        setCustomerName(existing.customerName);
+      }
+      if (existing.phone) setPhone(existing.phone);
+      if (existing.state) setState(existing.state);
+      if (existing.city) setAddress(existing.city);
+      if (existing.adjustmentType) setAdjustmentType(existing.adjustmentType);
+      if (existing.items && existing.items.length > 0) {
+        const mapped: ProductItem[] = existing.items.map((i: any) => ({
+          product: i.product || '',
+          batchNo: i.batchNo || '',
+          hsn: i.hsn || '',
+          sold: String(i.sold || 0),
+          returnQty: String(i.returnQty || 1),
+          rate: String(i.rate || 0),
+          disc: String(i.disc || 0),
+          gst: String(i.gst || 18),
+          amt: String(i.totalAmt || 0),
+          reason: i.reason || '',
+        }));
+        while (mapped.length < 5) mapped.push(emptyItem());
+        setItems(mapped);
+      }
+    }
+  }, [route?.params?.creditNote]);
+
+  const handleSaveCreditNote = async () => {
+    try {
+      const summary = calculateSummary();
+      const activeItems = items.filter(i => i.product.trim().length > 0);
+      
+      const formattedLineItems: ProductLineItem[] = activeItems.map(i => {
+        const returnQty = Number(i.returnQty) || 1;
+        const rate = Number(i.rate) || 0;
+        const disc = Number(i.disc) || 0;
+        const gst = Number((i.gst || '').replace('%', '')) || 0;
+        const itemSub = returnQty * rate;
+        const itemDisc = (itemSub * disc) / 100;
+        const itemTax = itemSub - itemDisc;
+        const itemGst = (itemTax * gst) / 100;
+        const isInter = state.trim() !== '' && state.trim().toLowerCase() !== 'maharashtra';
+
+        return {
+          product: i.product,
+          batchNo: i.batchNo || 'BATCH-101',
+          reason: i.reason || reason || 'Sales Return',
+          sold: Number(i.sold) || 0,
+          returnQty,
+          rate,
+          disc,
+          gst,
+          hsn: i.hsn || '8471',
+          taxableAmt: itemTax,
+          cgstAmt: isInter ? 0 : itemGst / 2,
+          sgstAmt: isInter ? 0 : itemGst / 2,
+          igstAmt: isInter ? itemGst : 0,
+          totalAmt: itemTax + itemGst,
+        };
+      });
+
+      if (formattedLineItems.length === 0) {
+        const tot = Number(summary.totalCreditAmount) || 0;
+        const tax = Number(summary.taxableAmount) || tot;
+        const gstTot = tot - tax;
+        const isInter = state.trim() !== '' && state.trim().toLowerCase() !== 'maharashtra';
+        formattedLineItems.push({
+          product: customerName || customer ? `${customerName || customer} Item` : 'Returned Item',
+          batchNo: 'BATCH-101',
+          reason: reason || 'Sales Return',
+          sold: 1,
+          returnQty: 1,
+          rate: tax > 0 ? tax : 1000,
+          disc: 0,
+          gst: 18,
+          hsn: '8471',
+          taxableAmt: tax > 0 ? tax : 1000,
+          cgstAmt: isInter ? 0 : (gstTot > 0 ? gstTot / 2 : 90),
+          sgstAmt: isInter ? 0 : (gstTot > 0 ? gstTot / 2 : 90),
+          igstAmt: isInter ? (gstTot > 0 ? gstTot : 180) : 0,
+          totalAmt: tot > 0 ? tot : 1180,
+        });
+      }
+
+      const editTarget = route?.params?.creditNote;
+      const finalBillNo = creditNoteNo.trim() ? creditNoteNo : `CN-${Math.floor(100 + Math.random() * 900)}`;
+
+      const newRecord: CreditNoteRecord = {
+        id: editTarget?.id || String(Date.now()),
+        billNo: finalBillNo,
+        billDate: date || new Date().toLocaleDateString('en-GB'),
+        invoiceNo: invoice || 'INV-1001',
+        invoiceDate: invoiceDate || date || '20-09-2026',
+        customerName: customerName || customer || 'Default Customer',
+        phone: phone || '9823012345',
+        state: state || 'Maharashtra',
+        city: address || pincode || 'Pune',
+        defaultGstRate: defaultGstRate || '18%',
+        taxType: (!state || state.trim().toLowerCase() === 'maharashtra') ? 'CGST + SGST (Intra-state)' : 'IGST (Inter-state)',
+        subtotal: Number(summary.subtotal) || formattedLineItems.reduce((a, b) => a + b.rate * b.returnQty, 0),
+        discount: Number(summary.discount) || 0,
+        taxableAmount: Number(summary.taxableAmount) || formattedLineItems.reduce((a, b) => a + b.taxableAmt, 0),
+        cgst: Number(summary.cgst) || formattedLineItems.reduce((a, b) => a + b.cgstAmt, 0),
+        sgst: Number(summary.sgst) || formattedLineItems.reduce((a, b) => a + b.sgstAmt, 0),
+        igst: Number(summary.igst) || formattedLineItems.reduce((a, b) => a + b.igstAmt, 0),
+        creditNoteTotal: Number(summary.totalCreditAmount) || formattedLineItems.reduce((a, b) => a + b.totalAmt, 0),
+        adjustmentType: adjustmentType || 'Customer Credit',
+        items: formattedLineItems,
+      };
+
+      await addCreditNoteRecord(newRecord);
+      Alert.alert('Success', `Credit Note ${newRecord.billNo} saved successfully!`, [
+        {
+          text: 'OK',
+          onPress: () => navigation.goBack(),
+        },
+      ]);
+    } catch (err: any) {
+      console.error('Error saving credit note:', err);
+      Alert.alert('Error', 'Failed to save credit note.');
+    }
   };
 
   const summary = calculateSummary();
@@ -721,7 +853,7 @@ const CreditNoteScreen = ({ navigation }: any) => {
           </View>
 
           {/* SUBMIT */}
-          <TouchableOpacity style={styles.saveBtn} onPress={() => navigation.goBack()}>
+          <TouchableOpacity style={styles.saveBtn} onPress={handleSaveCreditNote}>
             <Text style={styles.saveBtnText}>CREATE CREDIT NOTE</Text>
           </TouchableOpacity>
 
