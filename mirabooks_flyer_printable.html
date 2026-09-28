@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MiraBooks - Smart Business Suite Flyer</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+
+    body {
+      background: #0f172a;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    /* Print Setup for A4 */
+    @page {
+      size: A4 portrait;
+      margin: 0;
+    }
+
+    @media print {
+      body {
+        background: white;
+        padding: 0;
+      }
+      .flyer-container {
+        box-shadow: none !important;
+        width: 100vw !important;
+        height: 100vh !important;
+        border-radius: 0 !important;
+      }
+      .no-print {
+        display: none !important;
+      }
+    }
+
+    .flyer-container {
+      width: 794px;
+      min-height: 1123px;
+      background: #ffffff;
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.4);
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+
+    /* HEADER BANNER */
+    .flyer-header {
+      background: linear-gradient(135deg, #0a192f 0%, #1e293b 60%, #0f172a 100%);
+      color: white;
+      padding: 40px 45px 30px;
+      position: relative;
+      border-bottom: 5px solid #ea580c;
+    }
+
+    .flyer-header::after {
+      content: "";
+      position: absolute;
+      top: -50px;
+      right: -50px;
+      width: 220px;
+      height: 220px;
+      background: radial-gradient(circle, rgba(234, 88, 12, 0.35) 0%, transparent 70%);
+      border-radius: 50%;
+    }
+
+    .header-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+    }
+
+    .brand-logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .logo-icon {
+      width: 46px;
+      height: 46px;
+      background: linear-gradient(135deg, #ea580c, #f97316);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      font-weight: 800;
+      color: white;
+      box-shadow: 0 6px 14px rgba(234, 88, 12, 0.4);
+    }
+
+    .logo-text {
+      font-size: 32px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+    }
+
+    .logo-text span {
+      color: #f97316;
+    }
+
+    .badge-pill {
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      backdrop-filter: blur(8px);
+      padding: 8px 18px;
+      border-radius: 50px;
+      font-size: 13px;
+      font-weight: 700;
+      color: #fed7aa;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .main-headline {
+      font-size: 38px;
+      font-weight: 800;
+      line-height: 1.2;
+      margin-bottom: 12px;
+    }
+
+    .main-headline span {
+      background: linear-gradient(90deg, #fb923c, #fdba74);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .sub-headline {
+      font-size: 16px;
+      color: #94a3b8;
+      max-width: 580px;
+      line-height: 1.5;
+    }
+
+    /* BODY FEATURES GRID */
+    .flyer-body {
+      padding: 35px 45px;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 22px;
+    }
+
+    .section-title-wrap {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .section-title {
+      font-size: 20px;
+      font-weight: 800;
+      color: #0f172a;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .section-title::before {
+      content: "";
+      width: 6px;
+      height: 22px;
+      background: #ea580c;
+      border-radius: 4px;
+    }
+
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 16px;
+    }
+
+    .feature-card {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 14px;
+      padding: 18px;
+      display: flex;
+      gap: 14px;
+      align-items: flex-start;
+      transition: all 0.2s ease;
+    }
+
+    .feature-icon-box {
+      width: 44px;
+      height: 44px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      flex-shrink: 0;
+    }
+
+    .ic-blue { background: #eff6ff; color: #2563eb; }
+    .ic-amber { background: #fffbeb; color: #d97706; }
+    .ic-green { background: #ecfdf5; color: #059669; }
+    .ic-purple { background: #faf5ff; color: #9333ea; }
+    .ic-rose { background: #fff1f2; color: #e11d48; }
+    .ic-teal { background: #f0fdfa; color: #0d9488; }
+
+    .feature-info h4 {
+      font-size: 15px;
+      font-weight: 700;
+      color: #1e293b;
+      margin-bottom: 4px;
+    }
+
+    .feature-info p {
+      font-size: 12.5px;
+      color: #64748b;
+      line-height: 1.4;
+    }
+
+    /* HIGHLIGHT BANNER */
+    .highlight-card {
+      background: linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%);
+      border: 1.5px dashed #ea580c;
+      border-radius: 14px;
+      padding: 16px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .highlight-text h3 {
+      font-size: 17px;
+      font-weight: 800;
+      color: #9a3412;
+      margin-bottom: 3px;
+    }
+
+    .highlight-text p {
+      font-size: 13px;
+      color: #c2410c;
+      font-weight: 500;
+    }
+
+    .cta-btn-header {
+      background: #ea580c;
+      color: white;
+      padding: 10px 22px;
+      border-radius: 30px;
+      font-size: 14px;
+      font-weight: 700;
+      text-decoration: none;
+      box-shadow: 0 4px 12px rgba(234, 88, 12, 0.3);
+    }
+
+    /* FOOTER STRIP */
+    .flyer-footer {
+      background: #0a192f;
+      color: white;
+      padding: 24px 45px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .footer-left h4 {
+      font-size: 17px;
+      font-weight: 700;
+      margin-bottom: 4px;
+      color: #f8fafc;
+    }
+
+    .footer-left p {
+      font-size: 13px;
+      color: #94a3b8;
+    }
+
+    .contact-items {
+      display: flex;
+      gap: 24px;
+    }
+
+    .contact-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13.5px;
+      font-weight: 600;
+      color: #e2e8f0;
+    }
+
+    .contact-item span {
+      color: #fb923c;
+    }
+
+    .print-controls {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: #1e293b;
+      padding: 12px 18px;
+      border-radius: 10px;
+      display: flex;
+      gap: 10px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+    }
+
+    .print-controls button {
+      background: #ea580c;
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 6px;
+      font-weight: 700;
+      cursor: pointer;
+      font-size: 13px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="print-controls no-print">
+    <button onclick="window.print()">🖨️ Print / Save as PDF</button>
+  </div>
+
+  <div class="flyer-container">
+    <!-- HEADER -->
+    <header class="flyer-header">
+      <div class="header-top">
+        <div class="brand-logo">
+          <div class="logo-icon">M</div>
+          <div class="logo-text">Mira<span>Books</span></div>
+        </div>
+        <div class="badge-pill">Smart Business Suite</div>
+      </div>
+      <h1 class="main-headline">
+        All-in-One Software for <br>
+        <span>Billing, POS & Accounting</span>
+      </h1>
+      <p class="sub-headline">
+        Empower your business with lightning-fast billing, automatic stock tracking, GST-ready invoicing, and comprehensive financial reports.
+      </p>
+    </header>
+
+    <!-- BODY CONTENT -->
+    <main class="flyer-body">
+      <div class="section-title-wrap">
+        <h2 class="section-title">Everything Your Business Needs</h2>
+      </div>
+
+      <div class="features-grid">
+        <!-- Feature 1 -->
+        <div class="feature-card">
+          <div class="feature-icon-box ic-blue">🧾</div>
+          <div class="feature-info">
+            <h4>Smart GST Invoicing</h4>
+            <p>Create professional, customizable GST bills & share via WhatsApp or Email in 1 click.</p>
+          </div>
+        </div>
+
+        <!-- Feature 2 -->
+        <div class="feature-card">
+          <div class="feature-icon-box ic-amber">⚡</div>
+          <div class="feature-info">
+            <h4>Fast POS & Barcode</h4>
+            <p>High-speed counter billing with thermal receipt printing and barcode scanner integration.</p>
+          </div>
+        </div>
+
+        <!-- Feature 3 -->
+        <div class="feature-card">
+          <div class="feature-icon-box ic-green">📦</div>
+          <div class="feature-info">
+            <h4>Live Inventory & Stock</h4>
+            <p>Real-time stock ledger, automated low stock alerts, unit masters, and category sorting.</p>
+          </div>
+        </div>
+
+        <!-- Feature 4 -->
+        <div class="feature-card">
+          <div class="feature-icon-box ic-purple">📊</div>
+          <div class="feature-info">
+            <h4>P&L & Financial Reports</h4>
+            <p>Accurate Profit & Loss, GSTR-1, Balance Sheet, and Sales analytics for smart decisions.</p>
+          </div>
+        </div>
+
+        <!-- Feature 5 -->
+        <div class="feature-card">
+          <div class="feature-icon-box ic-rose">👥</div>
+          <div class="feature-info">
+            <h4>Customer & Supplier Ledger</h4>
+            <p>Complete ledger history, track payment paid & receivables, credit/debit notes.</p>
+          </div>
+        </div>
+
+        <!-- Feature 6 -->
+        <div class="feature-card">
+          <div class="feature-icon-box ic-teal">☁️</div>
+          <div class="feature-info">
+            <h4>Cloud Sync & Security</h4>
+            <p>Bank-grade data security, instant cloud sync, multi-store and multi-device access.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- HIGHLIGHT CALLOUT -->
+      <div class="highlight-card">
+        <div class="highlight-text">
+          <h3>⚡ Upgrade Your Business Today!</h3>
+          <p>Easy 5-minute setup • No accounting knowledge needed • 24/7 Dedicated Support</p>
+        </div>
+        <a href="https://www.mirabooks.com" class="cta-btn-header">Get Free Demo</a>
+      </div>
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="flyer-footer">
+      <div class="footer-left">
+        <h4>Ready to Transform Your Business?</h4>
+        <p>Contact our solution experts for a live personalized walkthrough.</p>
+      </div>
+      <div class="contact-items">
+        <div class="contact-item">
+          <span>📞</span> +91 98765 43210
+        </div>
+        <div class="contact-item">
+          <span>🌐</span> www.mirabooks.com
+        </div>
+      </div>
+    </footer>
+  </div>
+
+</body>
+</html>

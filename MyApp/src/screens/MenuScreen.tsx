@@ -102,7 +102,9 @@ const MENU_MODULES = [
       {title: 'All Invoices', target: 'AllSales'},
       {title: 'Add Invoice', target: 'AddSale'},
       {title: 'Credit Note', target: 'CreditNote'},
-      {title:'Credit Note History', target:'CreditNoteHistory'}
+      {title: 'Credit Note History', target: 'CreditNoteHistory'},
+      {title: 'Payment Received', target: 'PaymentReceived'},
+      {title: 'Payment Received History', target: 'PaymentReceivedHistory'},
     ],
   },
   {

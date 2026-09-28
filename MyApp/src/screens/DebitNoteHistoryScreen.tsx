@@ -702,7 +702,7 @@ const DebitNoteHistoryScreen = ({navigation}: Props) => {
       </View>
 
       {/* 5. PAGINATION CONTROLS */}
-      {filteredNotes.length > 0 && (
+      {filteredNotes.length > 10 && (
         <View style={styles.paginationRow}>
           <Text style={styles.paginationInfo}>
             Showing {startIndex + 1}–{endIndex} of {filteredNotes.length}

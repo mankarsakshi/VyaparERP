@@ -40,12 +40,12 @@ const BackArrowIcon = () => (
 
 // Reset Icon
 const ResetIcon = () => (
-  <Text style={{ fontSize: 14 }}>🔄</Text>
+  <Text style={{ fontSize: 14 }}></Text>
 );
 
 // History Icon
 const HistoryIcon = () => (
-  <Text style={{ fontSize: 14 }}>📋</Text>
+  <Text style={{ fontSize: 14 }}></Text>
 );
 
 type Supplier = {
@@ -87,7 +87,34 @@ const DEMO_BILLS: PurchaseBill[] = [
 
 const PAYMENT_MODES = ['UPI', 'Cash', 'Net Banking', 'Cheque', 'Bank Transfer', 'Card'];
 
-const PaymentPaidScreen = ({ navigation }: any) => {
+const PaymentPaidScreen = ({ navigation, route }: any) => {
+  const editItem =
+    route?.params?.paymentRecord ||
+    route?.params?.item ||
+    route?.params?.record ||
+    route?.params?.payment ||
+    route?.params?.editPayment ||
+    null;
+
+  const [editingId, setEditingId] = useState<string | null>(editItem?.id || null);
+  const isEditing = Boolean(editingId || editItem);
+
+  const parseDateString = (str: string): Date => {
+    if (!str) return new Date();
+    if (str.includes('/')) {
+      const parts = str.split('/');
+      if (parts.length === 3) {
+        const d = parseInt(parts[0], 10);
+        const m = parseInt(parts[1], 10) - 1;
+        const y = parseInt(parts[2], 10);
+        const parsed = new Date(y, m, d);
+        if (!isNaN(parsed.getTime())) return parsed;
+      }
+    }
+    const parsed = new Date(str);
+    return isNaN(parsed.getTime()) ? new Date() : parsed;
+  };
+
   // Form State
   const [selectedSupplier, setSelectedSupplier] = useState<Supplier | null>(null);
   const [supplierSearch, setSupplierSearch] = useState('');
@@ -95,6 +122,12 @@ const PaymentPaidScreen = ({ navigation }: any) => {
   const [supplierEmail, setSupplierEmail] = useState('');
   const [supplierGSTIN, setSupplierGSTIN] = useState('');
   const [supplierAddress, setSupplierAddress] = useState('');
+
+  const generateVoucherNo = (): string => {
+    return `PAY-2026-${String(Math.floor(Math.random() * 900) + 100)}`;
+  };
+
+  const [voucherNo, setVoucherNo] = useState<string>(() => editItem?.voucherNo || generateVoucherNo());
 
   const [selectedBill, setSelectedBill] = useState<PurchaseBill | null>(null);
 
@@ -117,6 +150,44 @@ const PaymentPaidScreen = ({ navigation }: any) => {
   const [transactionNo, setTransactionNo] = useState<string>('');
   const [remarks, setRemarks] = useState<string>('');
   const [selectedAttachment, setSelectedAttachment] = useState<any>(null);
+
+  useEffect(() => {
+    const item =
+      route?.params?.paymentRecord ||
+      route?.params?.item ||
+      route?.params?.record ||
+      route?.params?.payment ||
+      route?.params?.editPayment ||
+      null;
+
+    if (item) {
+      setEditingId(item.id || null);
+      if (item.voucherNo) setVoucherNo(item.voucherNo);
+      if (item.supplierName) setSupplierSearch(item.supplierName);
+      if (item.supplierPhone) setSupplierPhone(item.supplierPhone);
+      if (item.supplierEmail) setSupplierEmail(item.supplierEmail);
+      if (item.supplierGSTIN) setSupplierGSTIN(item.supplierGSTIN);
+      if (item.supplierAddress) setSupplierAddress(item.supplierAddress);
+      if (item.billNo) setBillSearch(item.billNo);
+      if (item.billAmount !== undefined) setBillAmount(Number(item.billAmount));
+      if (item.previousPaid !== undefined) setPreviousPaid(Number(item.previousPaid));
+      if (item.remainingAmount !== undefined) setRemainingAmount(Number(item.remainingAmount));
+      if (item.paymentAmount !== undefined) setPaymentAmount(String(item.paymentAmount));
+      if (item.paymentDate) {
+        setPaymentDate(item.paymentDate);
+        setSelectedDate(parseDateString(item.paymentDate));
+      }
+      if (item.paymentMode) setPaymentMode(item.paymentMode);
+      if (item.transactionNo) setTransactionNo(item.transactionNo);
+      if (item.remarks) setRemarks(item.remarks);
+      if (item.attachmentName) {
+        setSelectedAttachment({
+          name: item.attachmentName,
+          fileName: item.attachmentName,
+        });
+      }
+    }
+  }, [route?.params]);
 
   const selectDocument = async () => {
     try {
@@ -267,6 +338,7 @@ const PaymentPaidScreen = ({ navigation }: any) => {
   };
 
   const resetForm = () => {
+    setEditingId(null);
     setSelectedSupplier(null);
     setSelectedBill(null);
     setSupplierSearch('');
@@ -286,6 +358,7 @@ const PaymentPaidScreen = ({ navigation }: any) => {
     setTransactionNo('');
     setRemarks('');
     setSelectedAttachment(null);
+    setVoucherNo(generateVoucherNo());
     closeAllDropdowns();
     setShowDatePicker(false);
   };
@@ -344,8 +417,8 @@ const PaymentPaidScreen = ({ navigation }: any) => {
 
     try {
       const newRecord = {
-        id: `pay_${Date.now()}`,
-        voucherNo: `PAY-2026-${String(Math.floor(Math.random() * 900) + 100)}`,
+        id: editingId || editItem?.id || `pay_${Date.now()}`,
+        voucherNo: voucherNo || generateVoucherNo(),
         paymentDate: paymentDate,
         supplierName: currentSupplier?.name || supplierSearch.trim() || 'Supplier',
         supplierPhone: supplierPhone || currentSupplier?.phone || '',
@@ -361,7 +434,7 @@ const PaymentPaidScreen = ({ navigation }: any) => {
         transactionNo: transactionNo || `TXN-${Date.now().toString().slice(-6)}`,
         remarks: remarks || '',
         attachmentName: selectedAttachment?.name || selectedAttachment?.fileName || 'Receipt_Doc.pdf',
-        createdAt: new Date().toISOString(),
+        createdAt: editItem?.createdAt || new Date().toISOString(),
       };
 
       await addPaymentPaidRecord(newRecord);
@@ -374,7 +447,9 @@ const PaymentPaidScreen = ({ navigation }: any) => {
       setSavedSuccess(false);
       Alert.alert(
         'Success',
-        `Payment of ₹${Number(paymentAmount).toLocaleString('en-IN')} recorded successfully!`,
+        isEditing
+          ? `Payment record ${voucherNo} updated successfully!`
+          : `Payment of ₹${Number(paymentAmount).toLocaleString('en-IN')} recorded successfully!`,
         [
           {
             text: 'View History',
@@ -408,7 +483,7 @@ const PaymentPaidScreen = ({ navigation }: any) => {
             <BackArrowIcon />
           </TouchableOpacity>
 
-          <Text style={styles.headerTitle}>Payment Paid</Text>
+          <Text style={styles.headerTitle}>{isEditing ? 'Edit Payment Paid' : 'Payment Paid'}</Text>
 
           <View style={styles.headerActions}>
             <TouchableOpacity
@@ -541,16 +616,38 @@ const PaymentPaidScreen = ({ navigation }: any) => {
               </View>
             </View>
 
-            {/* GSTIN / Tax ID */}
-            <Text style={[styles.fieldLabel, { marginTop: 12 }]}>GSTIN / Tax ID</Text>
-            <TextInput
-              style={styles.inputBoxText}
-              placeholder="Enter GSTIN / Tax ID"
-              placeholderTextColor="#94a3b8"
-              value={supplierGSTIN}
-              onChangeText={setSupplierGSTIN}
-              autoCapitalize="characters"
-            />
+            {/* Row: GSTIN / Tax ID & Voucher No */}
+            <View style={[styles.twoColRow, { marginTop: 12 }]}>
+              <View style={styles.colHalf}>
+                <Text style={styles.fieldLabel}>GSTIN / Tax ID</Text>
+                <TextInput
+                  style={styles.inputBoxText}
+                  placeholder="Enter GSTIN / Tax ID"
+                  placeholderTextColor="#94a3b8"
+                  value={supplierGSTIN}
+                  onChangeText={setSupplierGSTIN}
+                  autoCapitalize="characters"
+                />
+              </View>
+
+              <View style={styles.colHalf}>
+                <Text style={styles.fieldLabel}>Voucher No.</Text>
+                <TextInput
+                  style={[
+                    styles.inputBoxText,
+                    {
+                      backgroundColor: '#eef2f6',
+                      color: '#1e293b',
+                      fontWeight: '700',
+                    },
+                  ]}
+                  value={voucherNo}
+                  editable={false}
+                  placeholder="Voucher No."
+                  placeholderTextColor="#94a3b8"
+                />
+              </View>
+            </View>
 
             {/* Supplier Address */}
             <Text style={[styles.fieldLabel, { marginTop: 12 }]}>Supplier Address</Text>
@@ -824,7 +921,7 @@ const PaymentPaidScreen = ({ navigation }: any) => {
             style={styles.submitBtn}
             onPress={handleSavePayment}
             activeOpacity={0.8}>
-            <Text style={styles.submitBtnText}>Save Payment</Text>
+            <Text style={styles.submitBtnText}>{isEditing ? 'Update Payment' : 'Save Payment'}</Text>
           </TouchableOpacity>
 
         </ScrollView>

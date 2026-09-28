@@ -53,6 +53,20 @@ type Props = {
   route: any;
 };
 
+
+
+const STATIC_PRODUCT_BATCHES: {[key: string]: string[]} = {
+  'wireless mouse': ['BATCH-WM-101', 'BATCH-WM-102', 'BATCH-101'],
+  'mechanical keyboard': ['BATCH-KB-201', 'BATCH-KB-202', 'BATCH-102'],
+  'keyboard': ['BATCH-8472', 'BATCH-KB-101', 'BATCH-KB-102'],
+  'laptop': ['BATCH-8471', 'BATCH-LT-001', 'BATCH-LT-002'],
+  'usb-c cable': ['BATCH-103', 'BATCH-CB-01', 'BATCH-CB-02'],
+  '27-inch monitor': ['BATCH-104', 'BATCH-MN-01', 'BATCH-MN-02'],
+  'monitor': ['BATCH-104', 'BATCH-MN-01', 'BATCH-MN-02'],
+  'bluetooth speaker': ['BATCH-105', 'BATCH-SP-01', 'BATCH-SP-02'],
+  'external hard drive': ['BATCH-106', 'BATCH-HD-01', 'BATCH-HD-02'],
+};
+
 type Product = {
   id: string;
   name: string;
@@ -61,6 +75,9 @@ type Product = {
   selling_price?: string | number;
   discount?: string | number;
   gst?: string | number;
+  batch_no?: string;
+  batchNo?: string;
+  batch?: string;
 };
 
 type Customer = {
@@ -242,6 +259,33 @@ const DustbinIcon = ({size = 14, color = '#ef4444'}: {size?: number; color?: str
   </View>
 );
 
+const generateInvoiceNumber = (existingSales?: any[]): string => {
+  const currentYear = new Date().getFullYear();
+  if (Array.isArray(existingSales) && existingSales.length > 0) {
+    let maxNum = 0;
+    existingSales.forEach(sale => {
+      const inv = String(
+        sale?.invoice_number ||
+        sale?.SaleNo ||
+        sale?.sale_no ||
+        sale?.bill_no ||
+        sale?.bill_number ||
+        '',
+      );
+      const match = inv.match(/INV(?:-\d+)?-(\d+)/i) || inv.match(/(\d+)$/);
+      if (match && match[1]) {
+        const num = parseInt(match[1], 10);
+        if (!isNaN(num) && num > maxNum) {
+          maxNum = num;
+        }
+      }
+    });
+    const nextNum = String(maxNum + 1).padStart(3, '0');
+    return `INV-${currentYear}-${nextNum}`;
+  }
+  return `INV-${currentYear}-001`;
+};
+
 const AddSaleScreen = ({navigation, route}: Props) => {
   const routeSale =
     route?.params?.sale ||
@@ -261,7 +305,19 @@ const AddSaleScreen = ({navigation, route}: Props) => {
   const [saleId, setSaleId] =
     useState<string | number | null>(routeSaleId);
 
-  const [SaleNo, setSaleNo] = useState('');
+  const [SaleNo, setSaleNo] = useState<string>(() => {
+    if (routeSale) {
+      return String(
+        routeSale?.invoice_number ||
+        routeSale?.SaleNo ||
+        routeSale?.sale_no ||
+        routeSale?.bill_no ||
+        routeSale?.bill_number ||
+        generateInvoiceNumber(),
+      );
+    }
+    return generateInvoiceNumber();
+  });
   const [SaleDate, setSaleDate] =
     useState(getCurrentDate());
 
@@ -344,8 +400,19 @@ const AddSaleScreen = ({navigation, route}: Props) => {
     setModalProductDropdownOpen,
   ] = useState(false);
 
+  const [
+    modalBatchDropdownOpen,
+    setModalBatchDropdownOpen,
+  ] = useState(false);
+
   const [PaymentMode, setPaymentMode] =
     useState('Cash');
+
+  const [PaymentStatus, setPaymentStatus] =
+    useState('Paid');
+
+  const [paidAmount, setPaidAmount] =
+    useState('');
 
   const [saving, setSaving] =
     useState(false);
@@ -448,6 +515,8 @@ const AddSaleScreen = ({navigation, route}: Props) => {
         selling_price: item.selling_price ?? item.sale_price ?? item.rate ?? 0,
         discount: item.discount ?? item.discount_percent ?? 0,
         gst: item.gst ?? item.gst_percent ?? item.tax_rate ?? 0,
+        batch_no: item.batch_no ?? item.batchNo ?? item.batch ?? '',
+        batchNo: item.batchNo ?? item.batch_no ?? item.batch ?? '',
       }));
 
       setProductsList(formattedProducts);
@@ -456,13 +525,31 @@ const AddSaleScreen = ({navigation, route}: Props) => {
     }
   };
 
+  const loadSalesFromDB = async () => {
+    try {
+      const sales = await saleAPI.getSales();
+      if (Array.isArray(sales) && sales.length > 0 && !isEditing) {
+        setSaleNo(prev => {
+          if (!prev || prev.startsWith('INV-')) {
+            return generateInvoiceNumber(sales);
+          }
+          return prev;
+        });
+      }
+    } catch (error) {
+      console.log('Load sales for invoice number error:', error);
+    }
+  };
+
   useEffect(() => {
     loadCustomersFromDB();
     loadProductsFromDB();
+    loadSalesFromDB();
 
     const unsubscribe = navigation?.addListener?.('focus', () => {
       loadCustomersFromDB();
       loadProductsFromDB();
+      loadSalesFromDB();
     });
 
     return unsubscribe;
@@ -610,6 +697,7 @@ const AddSaleScreen = ({navigation, route}: Props) => {
     setModalHsn('');
     setModalGst(gstRate);
     setModalProductDropdownOpen(false);
+    setModalBatchDropdownOpen(false);
     setModalVisible(true);
   };
 
@@ -625,13 +713,19 @@ const AddSaleScreen = ({navigation, route}: Props) => {
     setModalHsn(item.hsn || '');
     setModalGst(item.gst || gstRate);
     setModalProductDropdownOpen(false);
+    setModalBatchDropdownOpen(false);
     setModalVisible(true);
   };
 
   const handleSelectModalProduct = (product: Product & { batch_no?: string; batchNo?: string; batch?: string }) => {
     setModalProduct(product.name);
     setModalProductId(product.id);
-    setModalBatchNo(String(product.batch_no ?? product.batchNo ?? product.batch ?? ''));
+
+    const prodKey = product.name.trim().toLowerCase();
+    const staticBatches = STATIC_PRODUCT_BATCHES[prodKey] || Object.entries(STATIC_PRODUCT_BATCHES).find(([k]) => prodKey.includes(k) || k.includes(prodKey))?.[1];
+    const initialBatch = staticBatches?.[0] || String(product.batch_no ?? product.batchNo ?? product.batch ?? '');
+    setModalBatchNo(initialBatch);
+
     setModalRate(String(product.selling_price ?? product.rate ?? ''));
     setModalDiscount(String(product.discount ?? '0'));
     setModalHsn(String(product.hsn ?? ''));
@@ -639,6 +733,7 @@ const AddSaleScreen = ({navigation, route}: Props) => {
     const productGst = numberValue(product.gst);
     setModalGst(productGst > 0 ? String(productGst) : gstRate);
     setModalProductDropdownOpen(false);
+    setModalBatchDropdownOpen(false);
   };
 
   const handleSaveModalItem = () => {
@@ -731,7 +826,14 @@ const AddSaleScreen = ({navigation, route}: Props) => {
 
   const populateSaleFields = (sale: any) => {
     setSaleId(sale?.id ?? sale?.sale_id ?? null);
-    setSaleNo(String(sale?.SaleNo ?? sale?.sale_no ?? sale?.bill_no ?? sale?.bill_number ?? ''));
+    const existingInv =
+      sale?.invoice_number ||
+      sale?.SaleNo ||
+      sale?.sale_no ||
+      sale?.bill_no ||
+      sale?.bill_number ||
+      '';
+    setSaleNo(existingInv ? String(existingInv) : generateInvoiceNumber());
 
     const existingDate = parseExistingDate(sale?.SaleDate ?? sale?.sale_date ?? sale?.date);
     setSelectedDate(existingDate);
@@ -747,6 +849,14 @@ const AddSaleScreen = ({navigation, route}: Props) => {
     );
     setGstRate(String(sale?.gst_rate ?? sale?.tax_rate ?? 18));
     setPaymentMode(sale?.payment_mode ?? sale?.payment_method ?? 'Cash');
+    setPaymentStatus(sale?.payment_status ?? sale?.paymentStatus ?? sale?.status ?? 'Paid');
+    setPaidAmount(
+      sale?.paid_amount != null
+        ? String(sale.paid_amount)
+        : sale?.paid != null
+        ? String(sale.paid)
+        : '',
+    );
 
     const existingItems = sale?.items ?? sale?.sale_items ?? sale?.products ?? [];
 
@@ -777,7 +887,7 @@ const AddSaleScreen = ({navigation, route}: Props) => {
 
   const resetForm = () => {
     setSaleId(null);
-    setSaleNo('');
+    setSaleNo(generateInvoiceNumber());
     setSaleDate(getCurrentDate());
     setSelectedDate(new Date());
     setCustomer('');
@@ -788,6 +898,8 @@ const AddSaleScreen = ({navigation, route}: Props) => {
     setCustomerPincode('');
     setGstRate('18');
     setPaymentMode('Cash');
+    setPaymentStatus('Paid');
+    setPaidAmount('');
     setItems(Array.from({length: 5}, createEmptyItem));
   };
 
@@ -907,7 +1019,19 @@ const AddSaleScreen = ({navigation, route}: Props) => {
       GrandTotal: Number(summary.grandTotal.toFixed(2)),
       payment_method: PaymentMode,
       payment_mode: PaymentMode,
-      payment_status: PaymentMode === 'Unpaid' ? 'Unpaid' : 'Paid',
+      payment_status: PaymentStatus,
+      paid_amount:
+        PaymentStatus === 'Partial'
+          ? numberValue(paidAmount)
+          : PaymentStatus === 'Unpaid'
+          ? 0
+          : Number(summary.grandTotal.toFixed(2)),
+      balance_amount:
+        PaymentStatus === 'Partial'
+          ? Number(Math.max(0, summary.grandTotal - numberValue(paidAmount)).toFixed(2))
+          : PaymentStatus === 'Unpaid'
+          ? Number(summary.grandTotal.toFixed(2))
+          : 0,
       notes: null,
       items: saleItems,
       sale_items: saleItems,
@@ -934,9 +1058,81 @@ const AddSaleScreen = ({navigation, route}: Props) => {
   const summary = calculateSaleSummary();
   const gstSummary = calculateGstSummary();
 
+  const remainingBalance = React.useMemo(() => {
+    if (PaymentStatus !== 'Partial') {
+      return '0.00';
+    }
+    const total = summary.grandTotal || 0;
+    const paid = Number(paidAmount) || 0;
+    const remaining = Math.max(0, total - paid);
+    return remaining.toFixed(2);
+  }, [PaymentStatus, summary.grandTotal, paidAmount]);
+
   const filteredModalProducts = productsList.filter((product: Product) =>
     product.name.toLowerCase().includes(modalProduct.toLowerCase()),
   );
+
+  const availableBatchOptions = React.useMemo(() => {
+    const prodName = modalProduct.trim().toLowerCase();
+    if (!prodName) {
+      return [];
+    }
+
+    const batchesSet = new Set<string>();
+
+    if (STATIC_PRODUCT_BATCHES[prodName]) {
+      STATIC_PRODUCT_BATCHES[prodName].forEach(b => batchesSet.add(b));
+    } else {
+      const matchedKey = Object.keys(STATIC_PRODUCT_BATCHES).find(k =>
+        prodName.includes(k) || k.includes(prodName),
+      );
+      if (matchedKey) {
+        STATIC_PRODUCT_BATCHES[matchedKey].forEach(b => batchesSet.add(b));
+      }
+    }
+
+    const selectedProd = productsList.find(
+      p =>
+        (modalProductId && p.id === modalProductId) ||
+        p.name.toLowerCase() === prodName,
+    );
+
+    if (selectedProd) {
+      if (Array.isArray((selectedProd as any).batches)) {
+        (selectedProd as any).batches.forEach((b: any) => {
+          const val = typeof b === 'string' ? b : b?.batch_no || b?.batchNo || b?.batch;
+          if (val && String(val).trim()) batchesSet.add(String(val).trim());
+        });
+      }
+
+      const prodBatch = selectedProd.batch_no || selectedProd.batchNo || selectedProd.batch;
+      if (prodBatch && String(prodBatch).trim()) {
+        const parts = String(prodBatch).split(/[,;|]/);
+        parts.forEach(p => {
+          if (p.trim()) batchesSet.add(p.trim());
+        });
+      }
+
+      if (batchesSet.size === 0) {
+        const prodIdentifier = selectedProd.hsn || selectedProd.id || '101';
+        const cleanProdId = String(prodIdentifier).replace(/[^a-zA-Z0-9]/g, '');
+        batchesSet.add(`BATCH-${cleanProdId}-01`);
+        batchesSet.add(`BATCH-${cleanProdId}-02`);
+        batchesSet.add(`BATCH-${cleanProdId}-03`);
+      }
+    } else if (batchesSet.size === 0) {
+      const cleanName = prodName.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 4) || 'PRD';
+      batchesSet.add(`BATCH-${cleanName}-01`);
+      batchesSet.add(`BATCH-${cleanName}-02`);
+      batchesSet.add(`BATCH-${cleanName}-03`);
+    }
+
+    if (modalBatchNo && modalBatchNo.trim()) {
+      batchesSet.add(modalBatchNo.trim());
+    }
+
+    return Array.from(batchesSet);
+  }, [modalProduct, modalProductId, productsList, modalBatchNo]);
 
   const modalSubtotalNum = numberValue(modalQuantity) * numberValue(modalRate);
   const modalDiscountAmount = (modalSubtotalNum * numberValue(modalDiscount)) / 100;
@@ -989,10 +1185,10 @@ const AddSaleScreen = ({navigation, route}: Props) => {
             <View style={styles.halfInputCol}>
               <Text style={styles.fieldLabel}>Invoice No</Text>
               <TextInput
-                style={styles.textInput}
+                style={[styles.textInput, styles.readOnlyInput]}
                 value={SaleNo}
-                onChangeText={setSaleNo}
-                placeholder="e.g. INV-1001"
+                editable={false}
+                placeholder="e.g. INV-2026-001"
                 placeholderTextColor="#94a3b8"
               />
             </View>
@@ -1478,20 +1674,75 @@ const AddSaleScreen = ({navigation, route}: Props) => {
         <View style={styles.formCard}>
           <Text style={styles.cardHeaderTitle}>Payment Information</Text>
 
-          <Text style={styles.fieldLabel}>Payment Mode</Text>
-          <View style={styles.pickerContainer}>
-            <Picker
-              selectedValue={PaymentMode}
-              mode="dropdown"
-              onValueChange={value => setPaymentMode(value)}
-              style={styles.picker}
-              dropdownIconColor="#64748b">
-              <Picker.Item label="Cash" value="Cash" />
-              <Picker.Item label="UPI" value="UPI" />
-              <Picker.Item label="Card" value="Card" />
-              <Picker.Item label="Credit" value="Credit" />
-            </Picker>
+          <View style={styles.inputRow}>
+            {/* PAYMENT MODE */}
+            <View style={styles.halfInputCol}>
+              <Text style={styles.fieldLabel}>Payment Mode</Text>
+              <View style={styles.pickerContainer}>
+                <Picker
+                  selectedValue={PaymentMode}
+                  mode="dropdown"
+                  onValueChange={value => setPaymentMode(value)}
+                  style={styles.picker}
+                  dropdownIconColor="#64748b">
+                  <Picker.Item label="Cash" value="Cash" />
+                  <Picker.Item label="UPI" value="UPI" />
+                  <Picker.Item label="Card" value="Card" />
+                  <Picker.Item label="Credit" value="Credit" />
+                </Picker>
+              </View>
+            </View>
+
+            {/* PAYMENT STATUS */}
+            <View style={styles.halfInputCol}>
+              <Text style={styles.fieldLabel}>Payment Status</Text>
+              <View style={styles.pickerContainer}>
+                <Picker
+                  selectedValue={PaymentStatus}
+                  mode="dropdown"
+                  onValueChange={value => setPaymentStatus(value)}
+                  style={styles.picker}
+                  dropdownIconColor="#64748b">
+                  <Picker.Item label="Paid" value="Paid" />
+                  <Picker.Item label="Pending" value="Pending" />
+                  <Picker.Item label="Partial" value="Partial" />
+                  <Picker.Item label="Unpaid" value="Unpaid" />
+                </Picker>
+              </View>
+            </View>
           </View>
+
+          {PaymentStatus === 'Partial' && (
+            <View style={[styles.inputRow, {marginTop: 12}]}>
+              {/* PAID */}
+              <View style={styles.halfInputCol}>
+                <Text style={styles.fieldLabel}>Paid</Text>
+                <TextInput
+                  style={styles.textInput}
+                  value={paidAmount}
+                  onChangeText={value => {
+                    const clean = value.replace(/[^0-9.]/g, '');
+                    setPaidAmount(clean);
+                  }}
+                  keyboardType="numeric"
+                  placeholder="0.00"
+                  placeholderTextColor="#94a3b8"
+                />
+              </View>
+
+              {/* REMAINING */}
+              <View style={styles.halfInputCol}>
+                <Text style={styles.fieldLabel}>Remaining</Text>
+                <TextInput
+                  style={[styles.textInput, styles.readOnlyInput]}
+                  value={remainingBalance}
+                  editable={false}
+                  placeholder="0.00"
+                  placeholderTextColor="#94a3b8"
+                />
+              </View>
+            </View>
+          )}
         </View>
 
         {/* ----------------- ORDER SUMMARY CARD ----------------- */}
@@ -1577,12 +1828,13 @@ const AddSaleScreen = ({navigation, route}: Props) => {
                 style={styles.modalScrollBody}>
                 {/* PRODUCT NAME INPUT + DROPDOWN */}
                 <Text style={styles.modalFieldLabel}>Product *</Text>
-                <View style={styles.modalDropdownContainer}>
+                <View style={[styles.modalDropdownContainer, {zIndex: 40}]}>
                   <TouchableOpacity
                     style={styles.modalSelectBtn}
-                    onPress={() =>
-                      setModalProductDropdownOpen(!modalProductDropdownOpen)
-                    }
+                    onPress={() => {
+                      setModalBatchDropdownOpen(false);
+                      setModalProductDropdownOpen(!modalProductDropdownOpen);
+                    }}
                     activeOpacity={0.8}>
                     <Text
                       style={[
@@ -1623,16 +1875,52 @@ const AddSaleScreen = ({navigation, route}: Props) => {
                   )}
                 </View>
 
-                {/* BATCH NO FIELD */}
-                <View style={{marginTop: 10}}>
-                  <Text style={styles.modalFieldLabel}>Batch No.</Text>
-                  <TextInput
-                    style={styles.modalInput}
-                    value={modalBatchNo}
-                    onChangeText={setModalBatchNo}
-                    placeholder="Enter Batch No."
-                    placeholderTextColor="#94a3b8"
-                  />
+                {/* BATCH NO DROPDOWN */}
+                <Text style={styles.modalFieldLabel}>Batch No.</Text>
+                <View style={[styles.modalDropdownContainer, {zIndex: 30}]}>
+                  <TouchableOpacity
+                    style={styles.modalSelectBtn}
+                    onPress={() => {
+                      setModalProductDropdownOpen(false);
+                      setModalBatchDropdownOpen(!modalBatchDropdownOpen);
+                    }}
+                    activeOpacity={0.8}>
+                    <Text
+                      style={[
+                        styles.modalSelectText,
+                        !modalBatchNo && styles.placeholderText,
+                      ]}>
+                      {modalBatchNo || 'Select Batch No.'}
+                    </Text>
+                    <Text style={styles.arrowIcon}>
+                      {modalBatchDropdownOpen ? '▲' : '▼'}
+                    </Text>
+                  </TouchableOpacity>
+
+                  {modalBatchDropdownOpen && (
+                    <View style={styles.modalDropdownMenu}>
+                      <ScrollView
+                        nestedScrollEnabled
+                        keyboardShouldPersistTaps="handled"
+                        style={{maxHeight: 160}}>
+                        {!modalProduct.trim() || availableBatchOptions.length === 0 ? (
+                          <Text style={styles.emptyText}>No batches found</Text>
+                        ) : (
+                          availableBatchOptions.map((batch: string) => (
+                            <TouchableOpacity
+                              key={batch}
+                              style={styles.dropdownMenuItem}
+                              onPress={() => {
+                                setModalBatchNo(batch);
+                                setModalBatchDropdownOpen(false);
+                              }}>
+                              <Text style={styles.dropdownMainText}>{batch}</Text>
+                            </TouchableOpacity>
+                          ))
+                        )}
+                      </ScrollView>
+                    </View>
+                  )}
                 </View>
 
                 {/* QUANTITY & RATE ROW */}
@@ -1920,9 +2208,22 @@ const AddSaleScreen = ({navigation, route}: Props) => {
                  </View>
                  <View style={styles.billGraphicPaymentBox}>
                    <Text style={styles.billGraphicPaymentLabel}>Payment Status:</Text>
-                   <Text style={styles.billGraphicPaymentValue}>{PaymentMode === 'Unpaid' ? 'Unpaid' : 'Paid'}</Text>
+                   <Text style={styles.billGraphicPaymentValue}>{PaymentStatus}</Text>
                  </View>
               </View>
+
+              {PaymentStatus === 'Partial' && (
+                <View style={[styles.billGraphicPaymentWrapper, {marginTop: 6}]}>
+                   <View style={styles.billGraphicPaymentBox}>
+                     <Text style={styles.billGraphicPaymentLabel}>Paid:</Text>
+                     <Text style={styles.billGraphicPaymentValue}>₹{numberValue(paidAmount).toFixed(2)}</Text>
+                   </View>
+                   <View style={styles.billGraphicPaymentBox}>
+                     <Text style={styles.billGraphicPaymentLabel}>Remaining:</Text>
+                     <Text style={styles.billGraphicPaymentValue}>₹{remainingBalance}</Text>
+                   </View>
+                </View>
+              )}
 
               {/* 7. AMOUNT IN WORDS */}
               <View style={styles.billGraphicWordsBox}>
@@ -2066,6 +2367,11 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#0f172a',
     fontWeight: '500',
+  },
+
+  readOnlyInput: {
+    backgroundColor: '#f1f5f9',
+    color: '#334155',
   },
 
   textAreaInput: {
